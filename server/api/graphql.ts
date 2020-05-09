@@ -20,6 +20,20 @@ schema.queryType({
   definition(t) {
     t.crud.user()
     t.crud.users()
+
+    t.field('logIn', {
+      type: 'User',
+      args: {
+        email: schema.stringArg({ required: true }),
+        password: schema.stringArg({ required: true }),
+      },
+      async resolve(_, { email, password }, { db }) {
+        return await db.user.findMany({
+          first: 1,
+          where: { email, password },
+        })
+      },
+    })
   },
 })
 
