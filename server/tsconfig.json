@@ -1,14 +1,11 @@
 {
   "compilerOptions": {
+    "esModuleInterop": true,
     "target": "es2016",
     "module": "commonjs",
-    "lib": [
-      "esnext"
-    ],
+    "lib": ["esnext"],
     "strict": true,
     "rootDir": "api"
   },
-  "include": [
-    "api"
-  ]
+  "include": ["api"]
 }

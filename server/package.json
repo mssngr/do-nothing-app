@@ -2,8 +2,12 @@
   "name": "do-nothing-app-api",
   "license": "UNLICENSED",
   "dependencies": {
+    "cors": "^2.8.5",
+    "jsonwebtoken": "^8.5.1",
     "nexus": "0.20.0",
-    "nexus-plugin-prisma": "^0.7.0"
+    "nexus-plugin-jwt-auth": "^1.0.0",
+    "nexus-plugin-prisma": "^0.7.0",
+    "ramda": "^0.27.0"
   },
   "scripts": {
     "build": "nexus build",
@@ -16,6 +20,9 @@
     "start": "node node_modules/.build"
   },
   "devDependencies": {
+    "@types/cors": "^2.8.6",
+    "@types/jsonwebtoken": "^8.3.9",
+    "@types/ramda": "^0.27.4",
     "prettier": "^2.0.5"
   }
 }
