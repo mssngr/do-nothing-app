@@ -2,9 +2,9 @@ import React from 'react'
 import { useLazyQuery, useMutation, gql } from '@apollo/client'
 import { UserContext } from './User'
 
-const VALIDATE = gql`
-  query Validate($accessToken: String!) {
-    validate(accessToken: $accessToken)
+const VERIFY = gql`
+  query Verify($accessToken: String!) {
+    verify(accessToken: $accessToken)
   }
 `
 
@@ -16,14 +16,14 @@ const REFRESH = gql`
 
 export default function Auth(children: any) {
   const [user, updateUser] = React.useContext(UserContext)
-  const [validate, validateResponse] = useLazyQuery(VALIDATE, {
+  const [verify, verifyResponse] = useLazyQuery(VERIFY, {
     variables: { accessToken: user.accessToken },
   })
   const [refresh, refreshResponse] = useMutation(REFRESH, {
     variables: { refreshToken: user.refreshToken },
   })
 
-  if (validateResponse.loading || refreshResponse.loading) {
+  if (verifyResponse.loading || refreshResponse.loading) {
     return (
       <div>
         <p>Loading...</p>
@@ -32,8 +32,8 @@ export default function Auth(children: any) {
   }
 
   if (user.accessToken) {
-    validate()
-    const id = validateResponse.data?.validate
+    verify()
+    const id = verifyResponse.data?.verify
     if (id) {
       updateUser({ id, isActive: true })
       return children

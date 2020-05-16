@@ -1,4 +1,5 @@
 import { schema } from 'nexus'
+import * as R from 'ramda'
 import jwt from 'jsonwebtoken'
 import { uuid } from 'uuidv4'
 import * as U from './utils'
@@ -31,6 +32,30 @@ schema.queryType({
   definition(t) {
     t.crud.user()
     t.crud.users()
+
+    t.field('verify', {
+      type: 'String',
+      nullable: true,
+      args: {
+        accessToken: schema.stringArg({ required: true }),
+      },
+      async resolve(parent, { accessToken }, { db, log }) {
+        log.info('Someone is trying to verify their access token')
+        try {
+          const id = (jwt.verify(accessToken, U.appSecret) as any).id
+          const foundUser = await db.user.findOne({ where: { id } })
+          if (foundUser?.id === id) {
+            log.info(`${id} successfully verified their access token.`)
+            return id
+          }
+          throw new Error(`User ${id} not found`)
+        } catch (error) {
+          log.error(error)
+          log.info('Someone failed to verify their access token')
+          return null
+        }
+      },
+    })
   },
 })
 
@@ -50,35 +75,28 @@ schema.mutationType({
         refreshToken: schema.stringArg({ required: true }),
       },
       async resolve(parent, { refreshToken }, { db, log }) {
-        log.info(`Someone is trying to get a new accessToken.`)
+        log.info('Someone is trying to get a new accessToken.')
         try {
           const id = (jwt.verify(refreshToken, refreshSecret) as any).id
-          try {
-            const foundUser = await db.user.findOne({
+          const foundUser = await db.user.findOne({
+            where: { id },
+          })
+          const isRefreshTokenStillValid =
+            !!foundUser?.refreshedAt &&
+            new Date().getTime() - foundUser?.refreshedAt.getTime() < 8.64e7 // 1 day
+          if (foundUser && isRefreshTokenStillValid) {
+            const accessToken = U.generateToken({ id, expiresIn: '1 hour' })
+            await db.user.update({
               where: { id },
+              data: {
+                accessToken,
+                refreshedAt: new Date(),
+              },
             })
-            const isRefreshTokenStillValid =
-              !!foundUser?.refreshedAt &&
-              new Date().getTime() - foundUser?.refreshedAt.getTime() < 8.64e7 // 1 day
-            if (foundUser && isRefreshTokenStillValid) {
-              const accessToken = U.generateToken({ id, expiresIn: '1 hour' })
-              await db.user.update({
-                where: { id },
-                data: {
-                  accessToken,
-                  refreshedAt: new Date(),
-                },
-              })
-              log.info(`${id} successfully got a new accessToken.`)
-              return accessToken
-            }
-            log.info(`${id} failed to get a new accessToken.`)
-            return null
-          } catch (error) {
-            log.error(error)
-            log.info(`${id} failed to get a new accessToken.`)
-            throw new Error(error)
+            log.info(`${id} successfully got a new accessToken.`)
+            return accessToken
           }
+          throw new Error(`User ${id} not found`)
         } catch (error) {
           log.error(error)
           log.info(`Someone failed to get a new accessToken.`)
@@ -100,25 +118,24 @@ schema.mutationType({
             first: 1,
             where: { email, password },
           })
-          if (foundUsers.length === 1) {
-            log.info(`${email} successfully logged in.`)
-            const id = foundUsers[0].id
-            const updatedUser = await db.user.update({
-              where: { id },
-              data: {
-                refreshToken: U.generateToken({ id, secret: refreshSecret }),
-                accessToken: U.generateToken({ id, expiresIn: '1 hour' }),
-                refreshedAt: new Date(),
-              },
-            })
-            return updatedUser
+          if (R.isEmpty(foundUsers)) {
+            throw new Error(`User ${email} not found`)
           }
-          log.info(`${email} failed to log in.`)
-          return null
+          const id = foundUsers[0].id
+          const updatedUser = await db.user.update({
+            where: { id },
+            data: {
+              refreshToken: U.generateToken({ id, secret: refreshSecret }),
+              accessToken: U.generateToken({ id, expiresIn: '1 hour' }),
+              refreshedAt: new Date(),
+            },
+          })
+          log.info(`${email} successfully logged in.`)
+          return updatedUser
         } catch (error) {
           log.error(error)
           log.info(`${email} failed to log in.`)
-          throw new Error(error)
+          return null
         }
       },
     })
