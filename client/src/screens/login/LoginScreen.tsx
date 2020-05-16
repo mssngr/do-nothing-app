@@ -1,24 +1,22 @@
 import React from 'react'
-import { RouteComponentProps } from '@reach/router'
-import { useLazyQuery, gql } from '@apollo/client'
+import { RouteComponentProps, Redirect } from '@reach/router'
+import { useMutation, gql } from '@apollo/client'
+import { UserContext } from 'components/Providers/User'
 
 const LOGIN = gql`
-  query Login($email: String!, $password: String!) {
+  mutation Login($email: String!, $password: String!) {
     login(email: $email, password: $password) {
       id
-      firstName
-      fullName
-      email
-      avatarUrl
-      roles
-      isActivated
+      refreshToken
+      accessToken
     }
   }
 `
 
 export default function LoginScreen(props: RouteComponentProps) {
-  const [login, { loading, error, data }] = useLazyQuery(LOGIN)
-  const user = data?.logIn
+  const [user, setUser] = React.useContext(UserContext)
+  const [login, { loading, error, data }] = useMutation(LOGIN)
+  const loggedInUser = data?.login
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -44,8 +42,10 @@ export default function LoginScreen(props: RouteComponentProps) {
     )
   }
 
-  if (user) {
-    return <div>{user.fullName}</div>
+  if (loggedInUser) {
+    localStorage.setItem('refreshToken', loggedInUser.refreshToken)
+    setUser({ id: loggedInUser.id, accessToken: loggedInUser.accessToken })
+    return <Redirect to="/home" noThrow />
   }
 
   return (
@@ -54,7 +54,7 @@ export default function LoginScreen(props: RouteComponentProps) {
         <input placeholder="email" type="email" />
         <input placeholder="password" type="password" />
         <button type="submit">Log In</button>
-        {user === null && <p>Incorrect email or password</p>}
+        {loggedInUser === null && <p>Incorrect email or password</p>}
       </form>
     </div>
   )

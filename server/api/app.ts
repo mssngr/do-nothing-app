@@ -25,4 +25,12 @@ use(
 )
 
 // Enable Express Middleware
-server.express.use(cors())
+server.express.use(
+  cors(
+    process.env.NODE_ENV === 'production'
+      ? {
+          origin: process.env.DOMAIN,
+        }
+      : undefined
+  )
+)

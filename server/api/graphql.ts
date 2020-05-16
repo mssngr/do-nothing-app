@@ -1,10 +1,9 @@
 import { schema } from 'nexus'
 import jwt from 'jsonwebtoken'
+import { uuid } from 'uuidv4'
 import * as U from './utils'
 
 const refreshSecret = process.env.REFRESH_SECRET || 'refresh-placeholder'
-
-schema.addToContext(req => ({ headers: req.headers }))
 
 schema.objectType({
   name: 'User',
@@ -47,15 +46,13 @@ schema.mutationType({
     t.field('refreshToken', {
       type: 'String',
       nullable: true,
-      async resolve(parent, args, { db, log, headers }) {
+      args: {
+        token: schema.stringArg({ required: true }),
+      },
+      async resolve(parent, { token }, { db, log }) {
         log.info(`Someone is trying to get a new accessToken.`)
         try {
-          const token = headers.authorization
-            ?.replace('Bearer ', '')
-            .replace('bearer ', '')
-            .replace('JWT ', '')
-            .replace('jwt', '')
-          const id = (jwt.verify(token || '', refreshSecret) as any).id
+          const id = (jwt.verify(token, refreshSecret) as any).id
           try {
             const foundUser = await db.user.findOne({
               where: { id },
@@ -64,12 +61,16 @@ schema.mutationType({
               !!foundUser?.refreshedAt &&
               new Date().getTime() - foundUser?.refreshedAt.getTime() < 8.64e7 // 1 day
             if (foundUser && isRefreshTokenStillValid) {
-              log.info(`${id} successfully got a new accessToken.`)
-              db.user.update({
+              const accessToken = U.generateToken({ id, expiresIn: '1 hour' })
+              await db.user.update({
                 where: { id },
-                data: { refreshedAt: new Date() },
+                data: {
+                  accessToken,
+                  refreshedAt: new Date(),
+                },
               })
-              return U.generateToken({ id, expiresIn: '1 hour' })
+              log.info(`${id} successfully got a new accessToken.`)
+              return accessToken
             }
             log.info(`${id} failed to get a new accessToken.`)
             return null
@@ -87,8 +88,7 @@ schema.mutationType({
     })
 
     t.field('login', {
-      type: 'String',
-      list: true,
+      type: 'User',
       args: {
         email: schema.stringArg({ required: true }),
         password: schema.stringArg({ required: true }),
@@ -103,17 +103,61 @@ schema.mutationType({
           if (foundUsers.length === 1) {
             log.info(`${email} successfully logged in.`)
             const id = foundUsers[0].id
-            db.user.update({ where: { id }, data: { refreshedAt: new Date() } })
-            return [
-              U.generateToken({ id, secret: refreshSecret }),
-              U.generateToken({ id, expiresIn: '1 hour' }),
-            ]
+            const updatedUser = await db.user.update({
+              where: { id },
+              data: {
+                refreshToken: U.generateToken({ id, secret: refreshSecret }),
+                accessToken: U.generateToken({ id, expiresIn: '1 hour' }),
+                refreshedAt: new Date(),
+              },
+            })
+            return updatedUser
           }
           log.info(`${email} failed to log in.`)
           return null
         } catch (error) {
           log.error(error)
           log.info(`${email} failed to log in.`)
+          throw new Error(error)
+        }
+      },
+    })
+
+    t.field('signup', {
+      type: 'User',
+      args: {
+        firstName: schema.stringArg({ required: true }),
+        lastName: schema.stringArg({ required: true }),
+        email: schema.stringArg({ required: true }),
+        password: schema.stringArg({ required: true }),
+        phone: schema.stringArg({ required: true }),
+        avatarUrl: schema.stringArg(),
+      },
+      async resolve(parent, newUser, { db, log }) {
+        try {
+          log.info(`${newUser.email} is trying to sign up.`)
+          const activationCode = uuid()
+          log.info(`Send activation email (${activationCode})`)
+          const createdUser = await db.user.create({
+            data: { ...newUser, activationCode, roles: { set: [] } },
+          })
+          const refreshToken = U.generateToken({
+            id: createdUser.id,
+            secret: refreshSecret,
+          })
+          const accessToken = U.generateToken({
+            id: createdUser.id,
+            expiresIn: '1 hour',
+          })
+          const updatedUser = await db.user.update({
+            where: { id: createdUser.id },
+            data: { refreshToken, accessToken },
+          })
+          log.info(`${updatedUser.email} successfully signed up`)
+          return updatedUser
+        } catch (error) {
+          log.error(error)
+          log.info(`${newUser.email} failed to log in.`)
           throw new Error(error)
         }
       },
