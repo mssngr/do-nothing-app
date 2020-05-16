@@ -1,4 +1,5 @@
 import React from 'react'
+import * as R from 'ramda'
 import { RouteComponentProps, Redirect } from '@reach/router'
 import { useMutation, gql } from '@apollo/client'
 import { UserContext } from 'components/Providers/User'
@@ -28,7 +29,7 @@ const SIGN_UP = gql`
 `
 
 export default function SignupScreen(props: RouteComponentProps) {
-  const [user, setUser] = React.useContext(UserContext)
+  const [user, updateUser] = React.useContext(UserContext)
   const [signup, { loading, error, data }] = useMutation(SIGN_UP)
   const newUser = data?.signup
 
@@ -66,8 +67,10 @@ export default function SignupScreen(props: RouteComponentProps) {
   }
 
   if (newUser) {
-    localStorage.setItem('refreshToken', newUser.refreshToken)
-    setUser({ id: newUser.id, accessToken: newUser.accessToken })
+    updateUser({
+      ...R.pick(['id', 'accessToken', 'refreshToken'], newUser),
+      isActive: true,
+    })
     return <Redirect to="/home" noThrow />
   }
 

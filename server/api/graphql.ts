@@ -43,16 +43,16 @@ schema.mutationType({
     t.crud.deleteOneUser()
     t.crud.deleteManyUser()
 
-    t.field('refreshToken', {
+    t.field('refresh', {
       type: 'String',
       nullable: true,
       args: {
-        token: schema.stringArg({ required: true }),
+        refreshToken: schema.stringArg({ required: true }),
       },
-      async resolve(parent, { token }, { db, log }) {
+      async resolve(parent, { refreshToken }, { db, log }) {
         log.info(`Someone is trying to get a new accessToken.`)
         try {
-          const id = (jwt.verify(token, refreshSecret) as any).id
+          const id = (jwt.verify(refreshToken, refreshSecret) as any).id
           try {
             const foundUser = await db.user.findOne({
               where: { id },
