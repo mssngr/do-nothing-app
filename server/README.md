@@ -27,3 +27,4 @@ This API utilizes the following technologies:
 - TypeScript
 - Yarn
 - Prettier
+- SHA-256
