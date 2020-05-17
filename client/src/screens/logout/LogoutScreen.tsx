@@ -4,9 +4,14 @@ import { useApolloClient } from '@apollo/client'
 import { UserContext } from 'components/Providers/User'
 
 export default function LogoutScreen(props: RouteComponentProps) {
-  const invalidateUser = React.useContext(UserContext)[2]
+  const userContext = React.useContext(UserContext)
+  const user = userContext[0]
+  const invalidateUser = userContext[2]
   const client = useApolloClient()
-  invalidateUser(client)
+
+  if (user.isActive || user.accessToken || user.refreshToken) {
+    invalidateUser(client)
+  }
 
   return (
     <div>

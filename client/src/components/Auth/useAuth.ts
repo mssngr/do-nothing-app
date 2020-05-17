@@ -27,10 +27,9 @@ export default function useAuth(location?: WindowLocation) {
   const hasYetToVerifyOrRefresh =
     state.isVerified === undefined ||
     (state.isRefreshed === undefined && !!user.refreshToken)
-  const isLoggedOut = !user.isActive && !user.accessToken && !user.refreshToken
   const isPublicPath = publicRoutes.some(route => route === location?.pathname)
 
-  const isAuthenticated = user.isActive || (isLoggedOut && isPublicPath)
+  const isAuthenticated = user.isActive || isPublicPath
   const isAuthenticating = !isAuthenticated && hasYetToVerifyOrRefresh
 
   async function verify() {

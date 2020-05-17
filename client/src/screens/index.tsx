@@ -4,6 +4,7 @@ import { UserContext } from 'components/Providers/User'
 import Auth from 'components/Auth'
 import HomeScreen from 'screens/home'
 import LoginScreen from 'screens/login'
+import LogoutScreen from 'screens/logout'
 import SignupScreen from 'screens/signup'
 import NotFoundScreen from 'screens/404'
 
@@ -14,6 +15,7 @@ export default function Screens() {
         <LandingScreen path="/" />
         <HomeScreen path="/home" />
         <LoginScreen path="/login" />
+        <LogoutScreen path="/logout" />
         <SignupScreen path="/signup" />
       </Auth>
       <NotFoundScreen default />
