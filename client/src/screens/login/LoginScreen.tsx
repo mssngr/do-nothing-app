@@ -15,7 +15,7 @@ const LOGIN = gql`
 `
 
 export default function LoginScreen(props: RouteComponentProps) {
-  const [user, updateUser] = React.useContext(UserContext)
+  const updateUser = React.useContext(UserContext)[1]
   const [login, { loading, error, data }] = useMutation(LOGIN)
   const loggedInUser = data?.login
 

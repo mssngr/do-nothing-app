@@ -1,6 +1,6 @@
 import React from 'react'
 import * as R from 'ramda'
-import { RouteComponentProps, Redirect } from '@reach/router'
+import { RouteComponentProps, navigate } from '@reach/router'
 import { useMutation, gql } from '@apollo/client'
 import { UserContext } from 'components/Providers/User'
 
@@ -11,7 +11,6 @@ const SIGN_UP = gql`
     $email: String!
     $password: String!
     $phone: String!
-    $avatarUrl: String!
   ) {
     signup(
       firstName: $firstName
@@ -19,33 +18,39 @@ const SIGN_UP = gql`
       email: $email
       password: $password
       phone: $phone
-      avatarUrl: $avatarUrl
     ) {
       id
-      name
-      avatarUrl
+      accessToken
+      refreshToken
     }
   }
 `
 
 export default function SignupScreen(props: RouteComponentProps) {
-  const [user, updateUser] = React.useContext(UserContext)
-  const [signup, { loading, error, data }] = useMutation(SIGN_UP)
-  const newUser = data?.signup
+  const updateUser = React.useContext(UserContext)[1]
+  const [signup, { loading, error }] = useMutation(SIGN_UP)
 
-  function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     const firstName = (e.target as any).children[0].value
     const lastName = (e.target as any).children[1].value
-    const email = (e.target as any).children[0].value
-    const password = (e.target as any).children[1].value
-    const confirmPassword = (e.target as any).children[0].value
-    const phone = (e.target as any).children[1].value
+    const email = (e.target as any).children[2].value
+    const password = (e.target as any).children[3].value
+    const confirmPassword = (e.target as any).children[4].value
+    const phone = (e.target as any).children[5].value
 
     if (password !== confirmPassword) {
       window.alert('Passwords do not match')
     } else {
-      signup({ variables: { firstName, lastName, email, password, phone } })
+      const { data } = await signup({
+        variables: { firstName, lastName, email, password, phone },
+      })
+      const newUser = data?.signup
+      updateUser({
+        ...R.pick(['id', 'accessToken', 'refreshToken'], newUser),
+        isActive: true,
+      })
+      navigate('/home')
     }
   }
 
@@ -64,14 +69,6 @@ export default function SignupScreen(props: RouteComponentProps) {
         <p>Error...</p>
       </div>
     )
-  }
-
-  if (newUser) {
-    updateUser({
-      ...R.pick(['id', 'accessToken', 'refreshToken'], newUser),
-      isActive: true,
-    })
-    return <Redirect to="/home" noThrow />
   }
 
   return (

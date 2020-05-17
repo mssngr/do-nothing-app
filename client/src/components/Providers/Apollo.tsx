@@ -15,52 +15,54 @@ const graphQLEndpoint =
   process.env.REACT_APP_API_URL || 'http://localhost:4000/graphql'
 
 export default function Apollo({ children }: { children: any }) {
-  const [user, setUser] = React.useContext(UserContext)
+  const [user, updateUser] = React.useContext(UserContext)
   const httpLink = new HttpLink({
     uri: graphQLEndpoint,
   })
   const reAuthLink = onError(({ networkError }) => {
     if ((networkError as ServerError | ServerParseError)?.statusCode === 401) {
-      reAuth(user, setUser)
+      reAuth(user, updateUser)
     }
   })
   const client = new ApolloClient({
     cache: new InMemoryCache(),
-    link: httpLink.concat(reAuthLink),
+    link: reAuthLink.concat(httpLink),
     headers: { Authorization: user.accessToken },
+    defaultOptions: {
+      query: { errorPolicy: 'all' },
+      watchQuery: { errorPolicy: 'all' },
+      mutate: { errorPolicy: 'all' },
+    },
   })
 
   return <ApolloProvider client={client}>{children}</ApolloProvider>
 }
 
 async function reAuth(
-  { id }: { id: number | null },
-  setUser: React.Dispatch<
-    React.SetStateAction<{
-      id: number | null
-      accessToken: string
-    }>
-  >
+  { refreshToken }: { refreshToken: string },
+  updateUser: (updates: {
+    id?: number | null
+    accessToken?: string
+    refreshToken?: string
+    isActive?: boolean
+  }) => void
 ) {
-  const refreshToken = localStorage.getItem('refreshToken')
   try {
     const response = await fetch(graphQLEndpoint, {
       method: 'POST',
       body: JSON.stringify({
-        query: `mutation { refresh(token: "${refreshToken}") }`,
+        query: `mutation { refresh(refreshToken: "${refreshToken}") }`,
       }),
     })
-    if (response.status === 401) {
-      localStorage.removeItem('refreshToken')
-      setUser({ id: null, accessToken: '' })
-      navigate('/login')
-    }
     const data = await response.json()
-    setUser({ id, accessToken: data?.refresh })
+    const accessToken = data?.refresh
+    if (response.status !== 401 && accessToken) {
+      updateUser({ accessToken })
+    } else {
+      throw new Error('User not successfuly re-verified')
+    }
   } catch (error) {
     console.error(error)
-    localStorage.removeItem('refreshToken')
-    setUser({ id: null, accessToken: '' })
-    navigate('/login')
+    navigate('/logout')
   }
 }

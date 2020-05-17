@@ -1,17 +1,11 @@
 import React from 'react'
-import { Router } from '@reach/router'
-import LandingScreen from 'screens/'
-import HomeScreen from 'screens/home'
-import LoginScreen from 'screens/login'
-import SignupScreen from 'screens/signup'
+import Screens from 'screens'
+import Providers from 'components/Providers'
 
 export default function App() {
   return (
-    <Router>
-      <LandingScreen path="/" />
-      <HomeScreen path="/home" />
-      <LoginScreen path="/login" />
-      <SignupScreen path="/signup" />
-    </Router>
+    <Providers>
+      <Screens />
+    </Providers>
   )
 }

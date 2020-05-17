@@ -1,0 +1,24 @@
+datasource db {
+  provider = "postgresql"
+  url = "***"
+}
+
+generator prisma_client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id             Int      @default(autoincrement()) @id
+  email          String   @unique
+  phone          String
+  firstName      String
+  lastName       String
+  password       String
+  avatarUrl      String?
+  roles          String[]
+  activationCode String?
+  refreshToken   String?
+  accessToken    String?
+  isActivated    Boolean  @default(false)
+  updatedAt      DateTime @updatedAt
+}

@@ -11,5 +11,6 @@ export function generateToken({
   expiresIn?: string
   secret?: string
 }) {
-  return jwt.sign({ id }, secret, { expiresIn })
+  const options = expiresIn ? { expiresIn } : {}
+  return jwt.sign({ id }, secret, options)
 }

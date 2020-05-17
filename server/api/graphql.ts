@@ -17,8 +17,13 @@ schema.objectType({
     t.model.password()
     t.model.avatarUrl()
     t.model.roles()
-    t.model.activationCode()
     t.model.isActivated()
+    t.model.activationCode()
+    t.model.accessToken()
+    t.model.refreshToken()
+    t.model.createdAt()
+    t.model.updatedAt()
+    t.model.refreshedAt()
 
     t.string('fullName', {
       resolve({ firstName, lastName }) {
@@ -154,10 +159,10 @@ schema.mutationType({
         try {
           log.info(`${newUser.email} is trying to sign up.`)
           const activationCode = uuid()
-          log.info(`Send activation email (${activationCode})`)
           const createdUser = await db.user.create({
             data: { ...newUser, activationCode, roles: { set: [] } },
           })
+          log.info(`Send activation email (${activationCode})`)
           const refreshToken = U.generateToken({
             id: createdUser.id,
             secret: refreshSecret,

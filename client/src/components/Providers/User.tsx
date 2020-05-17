@@ -1,5 +1,6 @@
 import React from 'react'
 import * as R from 'ramda'
+import { ApolloClient } from '@apollo/client'
 
 const id = localStorage.getItem('id')
   ? parseInt(localStorage.getItem('id') as string, 10)
@@ -19,9 +20,10 @@ export const UserContext = React.createContext<
       accessToken?: string
       refreshToken?: string
       isActive?: boolean
-    }) => void
+    }) => void,
+    (client?: ApolloClient<any>) => void
   ]
->([{ id, accessToken, refreshToken, isActive: false }, () => null])
+>([{ id, accessToken, refreshToken, isActive: false }, () => null, () => null])
 
 export default function User({ children }: { children: any }) {
   const [user, setUser] = React.useState({
@@ -44,8 +46,14 @@ export default function User({ children }: { children: any }) {
     setUser({ ...user, ...updates })
   }
 
+  function invalidateUser(client?: ApolloClient<any>) {
+    client && client.resetStore()
+    R.forEachObjIndexed((value, key) => localStorage.removeItem(key), user)
+    setUser({ id: null, accessToken: '', refreshToken: '', isActive: false })
+  }
+
   return (
-    <UserContext.Provider value={[user, updateUser]}>
+    <UserContext.Provider value={[user, updateUser, invalidateUser]}>
       {children}
     </UserContext.Provider>
   )
