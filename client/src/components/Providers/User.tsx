@@ -2,21 +2,19 @@ import React from 'react'
 import * as R from 'ramda'
 import { ApolloClient } from '@apollo/client'
 
-const id = localStorage.getItem('id')
-  ? parseInt(localStorage.getItem('id') as string, 10)
-  : null
+const id = localStorage.getItem('id') ?? ''
 const accessToken = localStorage.getItem('accessToken') ?? ''
 const refreshToken = localStorage.getItem('refreshToken') ?? ''
 export const UserContext = React.createContext<
   [
     {
-      id: number | null
+      id: string
       accessToken: string
       refreshToken: string
       isActive: boolean
     },
     (updates: {
-      id?: number | null
+      id?: string
       accessToken?: string
       refreshToken?: string
       isActive?: boolean
@@ -34,7 +32,7 @@ export default function User({ children }: { children: any }) {
   })
 
   function updateUser(updates: {
-    id?: number | null
+    id?: string
     accessToken?: string
     refreshToken?: string
     isActive?: boolean
@@ -49,7 +47,7 @@ export default function User({ children }: { children: any }) {
   function invalidateUser(client?: ApolloClient<any>) {
     client && client.resetStore()
     R.forEachObjIndexed((value, key) => localStorage.removeItem(key), user)
-    setUser({ id: null, accessToken: '', refreshToken: '', isActive: false })
+    setUser({ id: '', accessToken: '', refreshToken: '', isActive: false })
   }
 
   return (

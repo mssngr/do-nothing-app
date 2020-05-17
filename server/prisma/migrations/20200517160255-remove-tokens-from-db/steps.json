@@ -1,0 +1,40 @@
+{
+  "version": "0.3.14-fixed",
+  "steps": [
+    {
+      "tag": "DeleteField",
+      "model": "User",
+      "field": "refreshToken"
+    },
+    {
+      "tag": "DeleteField",
+      "model": "User",
+      "field": "accessToken"
+    },
+    {
+      "tag": "CreateDirective",
+      "location": {
+        "path": {
+          "tag": "Field",
+          "model": "User",
+          "field": "activationCode"
+        },
+        "directive": "default"
+      }
+    },
+    {
+      "tag": "CreateArgument",
+      "location": {
+        "tag": "Directive",
+        "path": {
+          "tag": "Field",
+          "model": "User",
+          "field": "activationCode"
+        },
+        "directive": "default"
+      },
+      "argument": "",
+      "value": "uuid()"
+    }
+  ]
+}

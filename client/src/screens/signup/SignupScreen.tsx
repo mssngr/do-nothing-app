@@ -26,7 +26,7 @@ const SIGN_UP = gql`
   }
 `
 
-export default function SignupScreen(props: RouteComponentProps) {
+export default function SignupScreen({}: RouteComponentProps) {
   const updateUser = React.useContext(UserContext)[1]
   const [signup, { loading, error }] = useMutation(SIGN_UP)
 

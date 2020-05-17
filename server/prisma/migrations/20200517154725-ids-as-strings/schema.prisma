@@ -1,6 +1,6 @@
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
+  url = "***"
 }
 
 generator prisma_client {
@@ -16,7 +16,9 @@ model User {
   password       String
   avatarUrl      String?
   roles          String[]
-  activationCode String?  @default(uuid())
+  activationCode String?
+  refreshToken   String?
+  accessToken    String?
   isActivated    Boolean  @default(false)
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt

@@ -41,7 +41,7 @@ export default function Apollo({ children }: { children: any }) {
 async function reAuth(
   { refreshToken }: { refreshToken: string },
   updateUser: (updates: {
-    id?: number | null
+    id?: string
     accessToken?: string
     refreshToken?: string
     isActive?: boolean

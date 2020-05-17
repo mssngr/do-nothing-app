@@ -14,7 +14,7 @@ const LOGIN = gql`
   }
 `
 
-export default function LoginScreen(props: RouteComponentProps) {
+export default function LoginScreen({}: RouteComponentProps) {
   const updateUser = React.useContext(UserContext)[1]
   const [login, { loading, error }] = useMutation(LOGIN)
   const [isIncorrect, setIsIncorrect] = React.useState(false)

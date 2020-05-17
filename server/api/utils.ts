@@ -7,7 +7,7 @@ export function generateToken({
   expiresIn,
   secret = appSecret,
 }: {
-  id: number
+  id: string
   expiresIn?: string
   secret?: string
 }) {

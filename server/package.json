@@ -7,8 +7,7 @@
     "nexus": "0.20.0",
     "nexus-plugin-jwt-auth": "^1.0.0",
     "nexus-plugin-prisma": "^0.7.0",
-    "ramda": "^0.27.0",
-    "uuidv4": "^6.0.8"
+    "ramda": "^0.27.0"
   },
   "scripts": {
     "build": "nexus build",
@@ -24,7 +23,6 @@
     "@types/cors": "^2.8.6",
     "@types/jsonwebtoken": "^8.3.9",
     "@types/ramda": "^0.27.4",
-    "@types/uuidv4": "^5.0.0",
     "prettier": "^2.0.5"
   }
 }
