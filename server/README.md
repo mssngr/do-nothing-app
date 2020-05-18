@@ -22,9 +22,11 @@ yarn dev
 
 This API utilizes the following technologies:
 
+- TypeScript
 - Nexus JS
 - Prisma 2
-- TypeScript
 - Yarn
+- Forge (for SHA & AES)
+- JWT
+- Ramda
 - Prettier
-- SHA-256

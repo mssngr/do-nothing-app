@@ -3,8 +3,6 @@ import * as R from 'ramda'
 import jwt from 'jsonwebtoken'
 import * as U from './utils'
 
-const refreshSecret = process.env.REFRESH_SECRET || 'refresh-placeholder'
-
 schema.objectType({
   name: 'User',
   definition(t) {
@@ -13,11 +11,7 @@ schema.objectType({
     t.model.phone()
     t.model.firstName()
     t.model.lastName()
-    t.model.password()
-    t.model.avatarUrl()
-    t.model.roles()
     t.model.isActivated()
-    t.model.activationCode()
     t.model.createdAt()
     t.model.updatedAt()
     t.model.refreshedAt()
@@ -53,10 +47,10 @@ schema.queryType({
       async resolve({}, { accessToken }, { db, log }) {
         log.info('Someone is trying to verify their access token')
         try {
-          const id = (jwt.verify(accessToken, U.appSecret) as any).id
+          const id = (jwt.verify(accessToken, U.ACCESS_SECRET) as any).id
           const foundUser = await db.user.findOne({ where: { id } })
           if (foundUser?.id === id) {
-            log.info(`${id} successfully verified their access token.`)
+            log.info(`${id} successfully verified their access token`)
             return id
           }
           throw new Error(`User ${id} not found`)
@@ -72,12 +66,8 @@ schema.queryType({
 
 schema.mutationType({
   definition(t) {
-    t.crud.createOneUser()
-    t.crud.upsertOneUser()
     t.crud.updateOneUser()
-    t.crud.updateManyUser()
     t.crud.deleteOneUser()
-    t.crud.deleteManyUser()
 
     t.field('refresh', {
       type: 'String',
@@ -86,9 +76,9 @@ schema.mutationType({
         refreshToken: schema.stringArg({ required: true }),
       },
       async resolve({}, { refreshToken }, { db, log }) {
-        log.info('Someone is trying to get a new accessToken.')
+        log.info('Someone is trying to get a new accessToken')
         try {
-          const id = (jwt.verify(refreshToken, refreshSecret) as any).id
+          const id = (jwt.verify(refreshToken, U.REFRESH_SECRET) as any).id
           const foundUser = await db.user.findOne({
             where: { id },
           })
@@ -96,20 +86,24 @@ schema.mutationType({
             !!foundUser?.refreshedAt &&
             new Date().getTime() - foundUser?.refreshedAt.getTime() < 8.64e7 // 1 day
           if (foundUser && isRefreshTokenStillValid) {
-            const accessToken = U.generateToken({ id, expiresIn: '1 hour' })
+            const accessToken = U.generateToken({
+              id,
+              secret: U.ACCESS_SECRET,
+              expiresIn: '1 hour',
+            })
             await db.user.update({
               where: { id },
               data: {
                 refreshedAt: new Date(),
               },
             })
-            log.info(`${id} successfully got a new accessToken.`)
+            log.info(`${id} successfully got a new accessToken`)
             return accessToken
           }
           throw new Error(`User ${id} not found`)
         } catch (error) {
           log.error(error)
-          log.info(`Someone failed to get a new accessToken.`)
+          log.info(`Someone failed to get a new accessToken`)
           return null
         }
       },
@@ -123,7 +117,7 @@ schema.mutationType({
       },
       async resolve({}, { email, password }, { db, log }) {
         try {
-          log.info(`${email} is trying to log in.`)
+          log.info(`${email} is trying to log in`)
           const foundUsers = await db.user.findMany({
             first: 1,
             where: { email, password },
@@ -134,10 +128,11 @@ schema.mutationType({
           const id = foundUsers[0].id
           const refreshToken = U.generateToken({
             id,
-            secret: refreshSecret,
+            secret: U.REFRESH_SECRET,
           })
           const accessToken = U.generateToken({
             id,
+            secret: U.ACCESS_SECRET,
             expiresIn: '1 hour',
           })
           await db.user.update({
@@ -146,11 +141,11 @@ schema.mutationType({
               refreshedAt: new Date(),
             },
           })
-          log.info(`${email} successfully logged in.`)
+          log.info(`${email} successfully logged in`)
           return { id, accessToken, refreshToken }
         } catch (error) {
           log.error(error)
-          log.info(`${email} failed to log in.`)
+          log.info(`${email} failed to log in`)
           return null
         }
       },
@@ -168,26 +163,51 @@ schema.mutationType({
       },
       async resolve({}, newUser, { db, log }) {
         try {
-          log.info(`${newUser.email} is trying to sign up.`)
+          log.info(`${newUser.email} is trying to sign up`)
           const createdUser = await db.user.create({
-            data: { ...newUser, roles: { set: [] } },
+            data: newUser,
           })
           const id = createdUser.id
-          log.info(`Send activation email (${createdUser.activationCode})`)
           const refreshToken = U.generateToken({
             id,
-            secret: refreshSecret,
+            secret: U.REFRESH_SECRET,
           })
           const accessToken = U.generateToken({
             id,
+            secret: U.ACCESS_SECRET,
             expiresIn: '1 hour',
           })
+          const activationToken = U.generateToken({
+            id,
+            secret: U.ACTIVATION_SECRET,
+            expiresIn: '1 day',
+          })
           log.info(`${createdUser.email} successfully signed up`)
+          log.info(`Send activation email (${activationToken})`)
           return { id, accessToken, refreshToken }
         } catch (error) {
           log.error(error)
-          log.info(`${newUser.email} failed to log in.`)
+          log.info(`${newUser.email} failed to log in`)
           throw new Error(error)
+        }
+      },
+    })
+
+    t.field('activate', {
+      type: 'Boolean',
+      args: {
+        activationToken: schema.stringArg({ required: true }),
+      },
+      async resolve({}, { activationToken }, { db, log }) {
+        try {
+          log.info('Someone is trying to activate their account')
+          const verifiedToken = jwt.verify(activationToken, U.ACTIVATION_SECRET)
+          const id = (verifiedToken as any).id
+          await db.updateOneUser({ where: { id }, data: { isActivated: true } })
+          return true
+        } catch (error) {
+          console.error(error)
+          return false
         }
       },
     })
