@@ -118,31 +118,32 @@ schema.mutationType({
       async resolve({}, { email, password }, { db, log }) {
         try {
           log.info(`${email} is trying to log in`)
-          const foundUsers = await db.user.findMany({
-            first: 1,
-            where: { email, password },
+          const foundUser = await db.user.findOne({
+            where: { email },
           })
-          if (R.isEmpty(foundUsers)) {
-            throw new Error(`User ${email} not found`)
+          const isAuthenticated =
+            foundUser && U.checkPass(password, foundUser.hash)
+          if (isAuthenticated) {
+            const id = foundUser?.id as string
+            const refreshToken = U.generateToken({
+              id,
+              secret: U.REFRESH_SECRET,
+            })
+            const accessToken = U.generateToken({
+              id,
+              secret: U.ACCESS_SECRET,
+              expiresIn: '1 hour',
+            })
+            await db.user.update({
+              where: { id },
+              data: {
+                refreshedAt: new Date(),
+              },
+            })
+            log.info(`${email} successfully logged in`)
+            return { id, accessToken, refreshToken }
           }
-          const id = foundUsers[0].id
-          const refreshToken = U.generateToken({
-            id,
-            secret: U.REFRESH_SECRET,
-          })
-          const accessToken = U.generateToken({
-            id,
-            secret: U.ACCESS_SECRET,
-            expiresIn: '1 hour',
-          })
-          await db.user.update({
-            where: { id },
-            data: {
-              refreshedAt: new Date(),
-            },
-          })
-          log.info(`${email} successfully logged in`)
-          return { id, accessToken, refreshToken }
+          throw new Error(`User ${email} not found or passwords do not match`)
         } catch (error) {
           log.error(error)
           log.info(`${email} failed to log in`)
@@ -159,13 +160,23 @@ schema.mutationType({
         email: schema.stringArg({ required: true }),
         password: schema.stringArg({ required: true }),
         phone: schema.stringArg({ required: true }),
-        avatarUrl: schema.stringArg(),
       },
-      async resolve({}, newUser, { db, log }) {
+      async resolve(
+        {},
+        { firstName, lastName, email, password, phone },
+        { db, log }
+      ) {
         try {
-          log.info(`${newUser.email} is trying to sign up`)
+          log.info(`${email} is trying to sign up`)
+          const encryptedFields: any = R.map((val: string) => U.encrypt(val), {
+            firstName,
+            lastName,
+            email,
+            phone,
+          } as any)
+          const hash = await U.hash(password)
           const createdUser = await db.user.create({
-            data: newUser,
+            data: { ...encryptedFields, hash },
           })
           const id = createdUser.id
           const refreshToken = U.generateToken({
@@ -182,12 +193,12 @@ schema.mutationType({
             secret: U.ACTIVATION_SECRET,
             expiresIn: '1 day',
           })
-          log.info(`${createdUser.email} successfully signed up`)
+          log.info(`${email} successfully signed up`)
           log.info(`Send activation email (${activationToken})`)
           return { id, accessToken, refreshToken }
         } catch (error) {
           log.error(error)
-          log.info(`${newUser.email} failed to log in`)
+          log.info(`${email} failed to log in`)
           throw new Error(error)
         }
       },
@@ -203,7 +214,7 @@ schema.mutationType({
           log.info('Someone is trying to activate their account')
           const verifiedToken = jwt.verify(activationToken, U.ACTIVATION_SECRET)
           const id = (verifiedToken as any).id
-          await db.updateOneUser({ where: { id }, data: { isActivated: true } })
+          await db.user.update({ where: { id }, data: { isActivated: true } })
           return true
         } catch (error) {
           console.error(error)

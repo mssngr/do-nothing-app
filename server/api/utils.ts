@@ -1,5 +1,6 @@
 import jwt from 'jsonwebtoken'
-import forge from 'node-forge'
+import bcrypt from 'bcrypt'
+import CryptoJS from 'crypto-js'
 
 export const REFRESH_SECRET =
   process.env.REFRESH_SECRET || 'refresh-placeholder'
@@ -7,7 +8,7 @@ export const ACTIVATION_SECRET =
   process.env.ACTIVATION_SECRET || 'activation-placeholder'
 export const ACCESS_SECRET = process.env.ACCESS_SECRET || 'access-placeholder'
 export const ENCRYPTION_KEY =
-  process.env.ENCRYPTION_KEY || forge.random.getBytesSync(16)
+  process.env.ENCRYPTION_KEY || 'encryption-placeholder'
 
 export function generateToken({
   id,
@@ -22,17 +23,18 @@ export function generateToken({
   return jwt.sign({ id }, secret, options)
 }
 
-export function saltAndHash(string: string) {
-  const salt = forge.random.getBytesSync(16)
-  const messageDigest = forge.md.sha256.create()
-  messageDigest.update(string)
-  const hash = messageDigest.digest().toHex()
-  return { salt, hash }
+export async function hash(password: string) {
+  return await bcrypt.hash(password, 10)
 }
 
-export function encrypt(string: string) {
-  const key = forge.random.getBytesSync(16)
-  const iv = forge.random.getBytesSync(16)
+export async function checkPass(password: string, hash: string) {
+  return await bcrypt.compare(password, hash)
 }
 
-export function decrypt(string: string) {}
+export function encrypt(text: string) {
+  return CryptoJS.AES.encrypt(text, ENCRYPTION_KEY).toString()
+}
+
+export function decrypt(text: string) {
+  return CryptoJS.AES.decrypt(text, ENCRYPTION_KEY).toString(CryptoJS.enc.Utf8)
+}
