@@ -6,6 +6,8 @@ The Do Nothing UI uses Create React App & Apollo Client to display a "no frills"
 
 - Create React App
 - TypeScript
+- Prettier
+- Husky
 - Yarn
 - React Hooks
 - React Context

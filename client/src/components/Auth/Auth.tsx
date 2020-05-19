@@ -3,7 +3,13 @@ import { Redirect, RouteComponentProps } from '@reach/router'
 import LoadingOrError from 'components/LoadingOrError'
 import useAuth from './useAuth'
 
-const publicRoutes = ['^/$', '^/signup$', '^/login$', '^/reset.*']
+const publicRoutes = [
+  '^/$',
+  '^/signup$',
+  '^/login$',
+  '^/reset.*',
+  '^/activation/.*',
+]
 
 export default function Auth({
   children,
