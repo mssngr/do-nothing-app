@@ -25,6 +25,10 @@ It also handles some major security concerns, like:
 - Encrypting PII (Personally Identifying Information) like names, phone numbers, and emails via AES-128
 - Implementing "blind indexes" for encrypted fields, like email, that need to be searchable ([Further Reading](https://itnext.io/indexing-encrypted-database-field-for-searching-e50e7bcfbd80))
 
+What you won't see:
+- CSS
+- Tests
+
 Use this repo as a baseline to create your next big app. The annoying bits of app development boilerplate listed above are taken care of for you. The rest is up to you.
 
 ## Tech Stack
