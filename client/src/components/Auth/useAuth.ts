@@ -14,7 +14,7 @@ const REFRESH = gql`
   }
 `
 
-export default function useAuth() {
+export default function useAuth(): [boolean, boolean] {
   const client = useApolloClient()
   const [user, updateUser] = React.useContext(UserContext)
   const [state, setState] = React.useState<{
@@ -27,7 +27,7 @@ export default function useAuth() {
 
   const isAuthenticating = !user.isAuthenticated && hasYetToVerifyOrRefresh
 
-  async function verify() {
+  async function verify(): Promise<void> {
     try {
       if (user.accessToken) {
         const { data } = await client.query({
@@ -38,7 +38,6 @@ export default function useAuth() {
 
         if (id) {
           updateUser({ id, isAuthenticated: true })
-          // setState({ isRefreshed: true, isVerified: true })
         } else {
           setState({ ...state, isVerified: false })
         }
@@ -51,7 +50,7 @@ export default function useAuth() {
     }
   }
 
-  async function refresh() {
+  async function refresh(): Promise<void> {
     try {
       if (user.refreshToken) {
         const { data } = await client.mutate({

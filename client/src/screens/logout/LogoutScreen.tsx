@@ -3,7 +3,7 @@ import { RouteComponentProps, Link } from '@reach/router'
 import { useApolloClient } from '@apollo/client'
 import { UserContext } from 'components/Providers/User'
 
-export default function LogoutScreen(props: RouteComponentProps) {
+const LogoutScreen: React.FC<RouteComponentProps> = () => {
   const userContext = React.useContext(UserContext)
   const user = userContext[0]
   const invalidateUser = userContext[2]
@@ -22,3 +22,5 @@ export default function LogoutScreen(props: RouteComponentProps) {
     </div>
   )
 }
+
+export default LogoutScreen

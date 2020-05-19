@@ -12,26 +12,24 @@ import ResetScreen from 'screens/reset'
 import ResetTokenScreen from 'screens/reset/token'
 import NotFoundScreen from 'screens/404'
 
-export default function Screens() {
-  return (
-    <Router>
-      <Auth path="/">
-        <LandingScreen path="/" />
-        <HomeScreen path="/home" />
-        <SignupScreen path="/signup" />
-        <ActivationScreen path="/activation/" />
-        <ActivationTokenScreen path="/activation/:activationToken" />
-        <LoginScreen path="/login" />
-        <LogoutScreen path="/logout" />
-        <ResetScreen path="/reset" />
-        <ResetTokenScreen path="/reset/:resetToken" />
-        <NotFoundScreen default />
-      </Auth>
-    </Router>
-  )
-}
+const Screens: React.FC = () => (
+  <Router>
+    <Auth path="/">
+      <LandingScreen path="/" />
+      <HomeScreen path="/home" />
+      <SignupScreen path="/signup" />
+      <ActivationScreen path="/activation/" />
+      <ActivationTokenScreen path="/activation/:activationToken" />
+      <LoginScreen path="/login" />
+      <LogoutScreen path="/logout" />
+      <ResetScreen path="/reset" />
+      <ResetTokenScreen path="/reset/:resetToken" />
+      <NotFoundScreen default />
+    </Auth>
+  </Router>
+)
 
-function LandingScreen(props: RouteComponentProps) {
+const LandingScreen: React.FC<RouteComponentProps> = () => {
   const [user] = React.useContext(UserContext)
 
   if (user.isAuthenticated) {
@@ -47,3 +45,5 @@ function LandingScreen(props: RouteComponentProps) {
     </div>
   )
 }
+
+export default Screens

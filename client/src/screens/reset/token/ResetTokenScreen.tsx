@@ -9,18 +9,19 @@ const RESET_PASSWORD = gql`
   }
 `
 
-export default function ResetTokenScreen({
-  resetToken,
-}: { resetToken?: string } & RouteComponentProps) {
+const ResetTokenScreen: React.FC<
+  { resetToken?: string } & RouteComponentProps
+> = ({ resetToken }) => {
   const [resetPassword, { data, ...loadingOrError }] = useMutation(
     RESET_PASSWORD
   )
   const isReset = data?.resetPassword
 
-  async function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent): Promise<void> {
     e.preventDefault()
-    const newPassword = (e.target as any).children[0].value
-    const confirmPassword = (e.target as any).children[1].value
+    const newPassword = (e.currentTarget.children[0] as HTMLInputElement).value
+    const confirmPassword = (e.currentTarget.children[1] as HTMLInputElement)
+      .value
 
     if (newPassword !== confirmPassword) {
       window.alert('Passwords do not match')
@@ -66,3 +67,5 @@ export default function ResetTokenScreen({
     </LoadingOrError>
   )
 }
+
+export default ResetTokenScreen

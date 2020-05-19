@@ -1,14 +1,9 @@
 import React from 'react'
 
-export default function LoadingOrError({
-  loading,
-  error,
-  children,
-}: {
+const LoadingOrError: React.FC<{
   loading?: boolean
-  error?: any
-  children?: React.ReactElement
-}) {
+  error?: string | object
+}> = ({ loading, error, children }) => {
   if (loading) {
     return (
       <div>
@@ -26,5 +21,7 @@ export default function LoadingOrError({
     )
   }
 
-  return children || null
+  return <>{children}</>
 }
+
+export default LoadingOrError

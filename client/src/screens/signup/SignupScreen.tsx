@@ -27,18 +27,19 @@ const SIGN_UP = gql`
   }
 `
 
-export default function SignupScreen(props: RouteComponentProps) {
+const SignupScreen: React.FC<RouteComponentProps> = () => {
   const updateUser = React.useContext(UserContext)[1]
   const [signup, loadingOrError] = useMutation(SIGN_UP)
 
-  async function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent): Promise<void> {
     e.preventDefault()
-    const firstName = (e.target as any).children[0].value
-    const lastName = (e.target as any).children[1].value
-    const email = (e.target as any).children[2].value
-    const password = (e.target as any).children[3].value
-    const confirmPassword = (e.target as any).children[4].value
-    const phone = (e.target as any).children[5].value
+    const firstName = (e.currentTarget.children[0] as HTMLInputElement).value
+    const lastName = (e.currentTarget.children[1] as HTMLInputElement).value
+    const email = (e.currentTarget.children[2] as HTMLInputElement).value
+    const password = (e.currentTarget.children[3] as HTMLInputElement).value
+    const confirmPassword = (e.currentTarget.children[4] as HTMLInputElement)
+      .value
+    const phone = (e.currentTarget.children[5] as HTMLInputElement).value
 
     if (password !== confirmPassword) {
       window.alert('Passwords do not match')
@@ -76,3 +77,5 @@ export default function SignupScreen(props: RouteComponentProps) {
     </LoadingOrError>
   )
 }
+
+export default SignupScreen

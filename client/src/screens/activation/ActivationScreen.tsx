@@ -9,18 +9,26 @@ const SEND_ACTIVATION_EMAIL = gql`
   }
 `
 
-export default function ActivationScreen(props: RouteComponentProps) {
+const ActivationScreen: React.FC<RouteComponentProps> = () => {
   const [sendActivationEmail, { loading, error, data }] = useMutation(
     SEND_ACTIVATION_EMAIL
   )
   const isEmailSent = data?.sendActivationEmail
 
-  async function handleClick(e: React.MouseEvent) {
+  async function handleClick(e: React.MouseEvent): Promise<void> {
     sendActivationEmail()
   }
 
   return (
-    <LoadingOrError loading={loading} error={error || isEmailSent === false}>
+    <LoadingOrError
+      loading={loading}
+      error={
+        error ||
+        (isEmailSent === false
+          ? 'There was an error sending the activation email'
+          : undefined)
+      }
+    >
       {isEmailSent ? (
         <ActivationEmailSent />
       ) : (
@@ -33,14 +41,14 @@ export default function ActivationScreen(props: RouteComponentProps) {
   )
 }
 
-export function ActivationEmailSent() {
-  return (
-    <div>
-      <h1>
-        An activation link was sent to your email. Please follow the link to
-        activate your account. You have 24 hours before it expires.
-      </h1>
-      <Link to="/home">Return to Home</Link>
-    </div>
-  )
-}
+export const ActivationEmailSent: React.FC = () => (
+  <div>
+    <h1>
+      An activation link was sent to your email. Please follow the link to
+      activate your account. You have 24 hours before it expires.
+    </h1>
+    <Link to="/home">Return to Home</Link>
+  </div>
+)
+
+export default ActivationScreen

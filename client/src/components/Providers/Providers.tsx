@@ -2,10 +2,10 @@ import React from 'react'
 import Apollo from './Apollo'
 import User from './User'
 
-export default function Providers({ children }: { children: any }) {
-  return (
-    <User>
-      <Apollo>{children}</Apollo>
-    </User>
-  )
-}
+const Providers: React.FC = ({ children }) => (
+  <User>
+    <Apollo>{children}</Apollo>
+  </User>
+)
+
+export default Providers

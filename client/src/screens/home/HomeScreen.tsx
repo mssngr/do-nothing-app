@@ -13,7 +13,7 @@ const USER = gql`
   }
 `
 
-export default function HomeScreen(props: RouteComponentProps) {
+const HomeScreen: React.FC<RouteComponentProps> = () => {
   const [{ id }] = React.useContext(UserContext)
   const { data, ...loadingOrError } = useQuery(USER, { variables: { id } })
   const user = data?.user
@@ -34,3 +34,5 @@ export default function HomeScreen(props: RouteComponentProps) {
     </LoadingOrError>
   )
 }
+
+export default HomeScreen

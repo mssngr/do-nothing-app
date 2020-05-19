@@ -2,7 +2,18 @@ import { use, server } from 'nexus'
 import { prisma } from 'nexus-plugin-prisma'
 import { auth } from 'nexus-plugin-jwt-auth'
 import cors from 'cors'
-import { ACCESS_SECRET } from './utils'
+
+export const REFRESH_SECRET =
+  process.env.REFRESH_SECRET || 'refresh-placeholder'
+export const ACTIVATION_SECRET =
+  process.env.ACTIVATION_SECRET || 'activation-placeholder'
+export const ACCESS_SECRET = process.env.ACCESS_SECRET || 'access-placeholder'
+export const ENCRYPTION_KEY =
+  process.env.ENCRYPTION_KEY || 'encryption-placeholder'
+export const BLIND_INDEX_SECRET =
+  process.env.BLIND_INDEX_SECRET || 'blind-index-placeholder'
+
+export const fieldsToEncrypt = ['firstName', 'lastName', 'email', 'phone']
 
 // Enables the Prisma plugin
 use(prisma())

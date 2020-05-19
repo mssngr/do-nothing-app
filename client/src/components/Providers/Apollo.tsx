@@ -14,13 +14,14 @@ import { UserContext } from './User'
 const graphQLEndpoint =
   process.env.REACT_APP_API_URL || 'http://localhost:4000/graphql'
 
-export default function Apollo({ children }: { children: any }) {
+const Apollo: React.FC = ({ children }) => {
   const [user, updateUser] = React.useContext(UserContext)
   const httpLink = new HttpLink({
     uri: graphQLEndpoint,
-    headers: user.isAuthenticated && user.accessToken && {
-      Authorization: `Bearer ${user.accessToken}`,
-    },
+    headers: user.isAuthenticated &&
+      user.accessToken && {
+        Authorization: `Bearer ${user.accessToken}`,
+      },
   })
   const reAuthLink = onError(({ networkError }) => {
     if ((networkError as ServerError | ServerParseError)?.statusCode === 401) {
@@ -48,7 +49,7 @@ async function reAuth(
     refreshToken?: string
     isAuthenticated?: boolean
   }) => void
-) {
+): Promise<void> {
   try {
     const response = await fetch(graphQLEndpoint, {
       method: 'POST',
@@ -68,3 +69,5 @@ async function reAuth(
     navigate('/logout')
   }
 }
+
+export default Apollo

@@ -7,26 +7,25 @@ const publicRoutes = [
   '^/$',
   '^/signup$',
   '^/login$',
+  '^/logout$',
   '^/reset.*',
   '^/activation/.*',
 ]
 
-export default function Auth({
-  children,
-  location,
-}: { children: any } & RouteComponentProps) {
+const Auth: React.FC<RouteComponentProps> = ({ children, location }) => {
   const [isAuthenticated, isAuthenticating] = useAuth()
   const isPublicPath = publicRoutes.some(route => {
     const publicRouteRegex = new RegExp(route)
     return !!location?.pathname?.match(publicRouteRegex)
   })
+  const isLogout = location?.pathname?.includes('/logout')
 
-  if (isAuthenticated && isPublicPath) {
+  if (isAuthenticated && !isLogout && isPublicPath) {
     return <Redirect to="/home" noThrow />
   }
 
   if (isAuthenticated || isPublicPath) {
-    return children
+    return <>{children}</>
   }
 
   if (isAuthenticating) {
@@ -35,3 +34,5 @@ export default function Auth({
 
   return <Redirect to="/" noThrow />
 }
+
+export default Auth

@@ -16,16 +16,16 @@ const LOGIN = gql`
   }
 `
 
-export default function LoginScreen(props: RouteComponentProps) {
+const LoginScreen: React.FC<RouteComponentProps> = () => {
   const [user, updateUser] = React.useContext(UserContext)
   const [login, loadingOrError] = useMutation(LOGIN)
   const [isIncorrect, setIsIncorrect] = React.useState(false)
   const [isLocked, setIsLocked] = React.useState(false)
 
-  async function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent): Promise<void> {
     e.preventDefault()
-    const email = (e.target as any).children[0].value
-    const password = (e.target as any).children[1].value
+    const email = (e.currentTarget.children[0] as HTMLInputElement).value
+    const password = (e.currentTarget.children[1] as HTMLInputElement).value
     const { data } = await login({ variables: { email, password } })
     const loggedInUser = data?.login
 
@@ -53,7 +53,12 @@ export default function LoginScreen(props: RouteComponentProps) {
           <input placeholder="password" type="password" />
           <button type="submit">Log In</button>
           {isIncorrect && <p>Incorrect email or password</p>}
-          {isLocked && <p>Due to too many password attempts, your account has been locked. Please reset your password to regain access to your account.</p>}
+          {isLocked && (
+            <p>
+              Due to too many password attempts, your account has been locked.
+              Please reset your password to regain access to your account.
+            </p>
+          )}
         </form>
         <Link to="/signup">Sign Up</Link>
         <br />
@@ -62,3 +67,5 @@ export default function LoginScreen(props: RouteComponentProps) {
     </LoadingOrError>
   )
 }
+
+export default LoginScreen

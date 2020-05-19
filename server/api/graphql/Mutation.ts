@@ -1,132 +1,16 @@
 import { schema } from 'nexus'
 import jwt from 'jsonwebtoken'
+import { ModelTypes } from 'typegen-nexus-prisma'
 import * as R from 'ramda'
-import * as U from './utils'
+import * as U from '../utils'
+import {
+  REFRESH_SECRET,
+  ACCESS_SECRET,
+  ACTIVATION_SECRET,
+  fieldsToEncrypt,
+} from '../app'
 
-schema.objectType({
-  name: 'User',
-  definition(t) {
-    t.model.id()
-    t.model.email()
-    t.model.phone()
-    t.model.firstName()
-    t.model.lastName()
-    t.model.passwordAttempts()
-    t.model.isActivated()
-    t.model.createdAt()
-    t.model.updatedAt()
-    t.model.refreshedAt()
-
-    t.string('fullName', {
-      resolve({ firstName, lastName }) {
-        return `${firstName} ${lastName}`
-      },
-    })
-  },
-})
-
-schema.objectType({
-  name: 'AccessCredentials',
-  definition(t) {
-    t.field('id', { type: 'ID', nullable: true })
-    t.field('accessToken', { type: 'String', nullable: true })
-    t.field('refreshToken', { type: 'String', nullable: true })
-    t.field('passwordAttempts', { type: 'Int', nullable: true })
-  },
-})
-
-schema.queryType({
-  definition(t) {
-    t.field('user', {
-      type: 'User',
-      nullable: true,
-      args: {
-        id: schema.idArg({ required: true }),
-      },
-      async resolve(parent, { id }, { db, log }) {
-        log.info(`Someone is trying to find User: ${id}`)
-        try {
-          const encryptedUser = await db.user.findOne({ where: { id } })
-          if (encryptedUser) {
-            log.info(`Someone successfully found User: ${id}`)
-            const decryptedUser: any = R.mapObjIndexed(
-              (text, key) =>
-                U.fieldsToEncrypt.includes(key)
-                  ? U.decrypt(text as string)
-                  : text,
-              encryptedUser
-            )
-            return decryptedUser
-          }
-          throw new Error(`User: ${id} could not be found`)
-        } catch (error) {
-          log.error(error)
-          log.info(`Someone failted to find User: ${id}`)
-          return null
-        }
-      },
-    })
-
-    t.field('users', {
-      type: 'User',
-      list: true,
-      args: {
-        ids: schema.arg({ type: 'ID', list: true, nullable: true }),
-      },
-      async resolve(parent, { ids }, { db, log }) {
-        log.info('Someone is trying to find users')
-        try {
-          const encryptedUsers = await db.user.findMany({
-            where: { id: { in: ids } },
-          })
-          if (R.isEmpty(encryptedUsers)) {
-            throw new Error('Users could not be found')
-          }
-          log.info('Someone successfully found users')
-          const decryptedUsers: any[] = encryptedUsers.map(encryptedUser =>
-            R.mapObjIndexed(
-              (text, key) =>
-                U.fieldsToEncrypt.includes(key)
-                  ? U.decrypt(text as string)
-                  : text,
-              encryptedUser
-            )
-          )
-          return decryptedUsers
-        } catch (error) {
-          log.error(error)
-          return []
-        }
-      },
-    })
-
-    t.field('verify', {
-      type: 'String',
-      nullable: true,
-      args: {
-        accessToken: schema.stringArg({ required: true }),
-      },
-      async resolve(parent, { accessToken }, { db, log }) {
-        log.info('Someone is trying to verify their access token')
-        try {
-          const id = (jwt.verify(accessToken, U.ACCESS_SECRET) as any).id
-          const foundUser = await db.user.findOne({ where: { id } })
-          if (foundUser?.id === id) {
-            log.info(`${id} successfully verified their access token`)
-            return id
-          }
-          throw new Error(`User ${id} not found`)
-        } catch (error) {
-          log.error(error)
-          log.info('Someone failed to verify their access token')
-          return null
-        }
-      },
-    })
-  },
-})
-
-schema.mutationType({
+export const Mutation = schema.mutationType({
   definition(t) {
     t.crud.updateOneUser()
     t.crud.deleteOneUser()
@@ -140,7 +24,9 @@ schema.mutationType({
       async resolve(parent, { refreshToken }, { db, log }) {
         log.info('Someone is trying to get a new accessToken')
         try {
-          const id = (jwt.verify(refreshToken, U.REFRESH_SECRET) as any).id
+          const id = (jwt.verify(refreshToken, REFRESH_SECRET) as {
+            id: string
+          }).id
           const foundUser = await db.user.findOne({
             where: { id },
           })
@@ -150,7 +36,7 @@ schema.mutationType({
           if (foundUser && isRefreshTokenStillValid) {
             const accessToken = U.generateToken({
               id,
-              secret: U.ACCESS_SECRET,
+              secret: ACCESS_SECRET,
               expiresIn: '1 hour',
             })
             await db.user.update({
@@ -172,7 +58,7 @@ schema.mutationType({
     })
 
     t.field('login', {
-      type: 'AccessCredentials',
+      type: 'AuthPayload',
       nullable: true,
       args: {
         email: schema.stringArg({ required: true }),
@@ -205,11 +91,11 @@ schema.mutationType({
               const id = foundUser?.id as string
               const refreshToken = U.generateToken({
                 id,
-                secret: U.REFRESH_SECRET,
+                secret: REFRESH_SECRET,
               })
               const accessToken = U.generateToken({
                 id,
-                secret: U.ACCESS_SECRET,
+                secret: ACCESS_SECRET,
                 expiresIn: '1 hour',
               })
               await db.user.update({
@@ -243,7 +129,7 @@ schema.mutationType({
     })
 
     t.field('signup', {
-      type: 'AccessCredentials',
+      type: 'AuthPayload',
       args: {
         firstName: schema.stringArg({ required: true }),
         lastName: schema.stringArg({ required: true }),
@@ -257,9 +143,9 @@ schema.mutationType({
           if (newUser.password.length < 8) {
             throw new Error('Password is not long enough (8 chars minimum)')
           }
-          const encryptedFields: any = R.map(
+          const encryptedFields: ModelTypes['User'] = R.map(
             (val: string) => U.encrypt(val),
-            R.pick(U.fieldsToEncrypt, newUser) as any
+            R.pick(fieldsToEncrypt, newUser)
           )
           const emailIndex = U.blindIndex(newUser.email)
           const hash = await U.hash(newUser.password)
@@ -269,16 +155,16 @@ schema.mutationType({
           const id = createdUser.id
           const refreshToken = U.generateToken({
             id,
-            secret: U.REFRESH_SECRET,
+            secret: REFRESH_SECRET,
           })
           const accessToken = U.generateToken({
             id,
-            secret: U.ACCESS_SECRET,
+            secret: ACCESS_SECRET,
             expiresIn: '1 hour',
           })
           const activationToken = U.generateToken({
             id,
-            secret: U.ACTIVATION_SECRET,
+            secret: ACTIVATION_SECRET,
             expiresIn: '1 day',
           })
           log.info(`${createdUser.id} successfully signed up`)
@@ -299,12 +185,13 @@ schema.mutationType({
       async resolve(parent, args, { db, log, token }) {
         log.info('Someone is trying to get an activation email')
         try {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           const id = (token as any).id
           const user = await db.user.findOne({ where: { id } })
           if (user) {
             const activationToken = U.generateToken({
               id: user.id,
-              secret: U.ACTIVATION_SECRET,
+              secret: ACTIVATION_SECRET,
               expiresIn: '1 hour',
             })
             log.info(
@@ -330,8 +217,8 @@ schema.mutationType({
       async resolve(parent, { activationToken }, { db, log }) {
         log.info('Someone is trying to activate their account')
         try {
-          const verifiedToken = jwt.verify(activationToken, U.ACTIVATION_SECRET)
-          const id = (verifiedToken as any).id
+          const verifiedToken = jwt.verify(activationToken, ACTIVATION_SECRET)
+          const id = (verifiedToken as { id: string }).id
           await db.user.update({ where: { id }, data: { isActivated: true } })
           log.info(`${id} successfully activated their account`)
           return true
@@ -356,7 +243,7 @@ schema.mutationType({
           if (user) {
             const activationToken = U.generateToken({
               id: user.id,
-              secret: U.ACTIVATION_SECRET,
+              secret: ACTIVATION_SECRET,
               expiresIn: '1 hour',
             })
             log.info(
@@ -386,8 +273,8 @@ schema.mutationType({
           if (newPassword.length < 8) {
             throw new Error('Password is not long enough (8 chars minimum)')
           }
-          const verifiedToken = jwt.verify(resetToken, U.ACTIVATION_SECRET)
-          const id = (verifiedToken as any).id
+          const verifiedToken = jwt.verify(resetToken, ACTIVATION_SECRET)
+          const id = (verifiedToken as { id: string }).id
           const hash = await U.hash(newPassword)
           await db.user.update({
             where: { id },

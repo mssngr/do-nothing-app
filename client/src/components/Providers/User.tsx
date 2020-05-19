@@ -19,7 +19,7 @@ export const UserContext = React.createContext<
       refreshToken?: string
       isAuthenticated?: boolean
     }) => void,
-    (client?: ApolloClient<any>) => void
+    (client?: ApolloClient<object>) => void
   ]
 >([
   { id, accessToken, refreshToken, isAuthenticated: false },
@@ -27,7 +27,7 @@ export const UserContext = React.createContext<
   () => null,
 ])
 
-export default function User({ children }: { children: any }) {
+const User: React.FC = ({ children }) => {
   const [user, setUser] = React.useState({
     id,
     accessToken,
@@ -40,7 +40,7 @@ export default function User({ children }: { children: any }) {
     accessToken?: string
     refreshToken?: string
     isAuthenticated?: boolean
-  }) {
+  }): void {
     R.forEachObjIndexed(
       (value, key) => localStorage.setItem(key, `${value}`),
       R.omit(['isAuthenticated'], updates)
@@ -48,7 +48,7 @@ export default function User({ children }: { children: any }) {
     setUser({ ...user, ...updates })
   }
 
-  function invalidateUser(client?: ApolloClient<any>) {
+  function invalidateUser(client?: ApolloClient<object>): void {
     client && client.resetStore()
     R.forEachObjIndexed((value, key) => localStorage.removeItem(key), user)
     setUser({
@@ -65,3 +65,5 @@ export default function User({ children }: { children: any }) {
     </UserContext.Provider>
   )
 }
+
+export default User

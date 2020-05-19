@@ -17,9 +17,9 @@ const ACTIVATE = gql`
   }
 `
 
-export default function ActivationTokenScreen({
-  activationToken,
-}: { activationToken?: string } & RouteComponentProps) {
+const ActivationTokenScreen: React.FC<
+  { activationToken?: string } & RouteComponentProps
+> = ({ activationToken }) => {
   const [user] = React.useContext(UserContext)
   const [activate, activateResponse] = useMutation(ACTIVATE, {
     variables: { activationToken },
@@ -30,7 +30,7 @@ export default function ActivationTokenScreen({
   const isEmailSent = sendActivationEmailResponse.data?.sendActivationEmail
   const isActivated = activateResponse.data?.activate
 
-  async function handleClick(e: React.MouseEvent) {
+  async function handleClick(e: React.MouseEvent): Promise<void> {
     sendActivationEmail()
   }
 
@@ -72,3 +72,5 @@ export default function ActivationTokenScreen({
     </LoadingOrError>
   )
 }
+
+export default ActivationTokenScreen

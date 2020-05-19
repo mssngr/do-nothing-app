@@ -9,15 +9,15 @@ const SEND_RESET_EMAIL = gql`
   }
 `
 
-export default function ResetScreen(props: RouteComponentProps) {
+const ResetScreen: React.FC<RouteComponentProps> = () => {
   const [sendResetEmail, { data, ...loadingOrError }] = useMutation(
     SEND_RESET_EMAIL
   )
   const isEmailSent = data?.sendResetEmail
 
-  async function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent): Promise<void> {
     e.preventDefault()
-    const email = (e.target as any).children[0].value
+    const email = (e.currentTarget.children[0] as HTMLInputElement).value
     sendResetEmail({ variables: { email } })
   }
 
@@ -48,3 +48,5 @@ export default function ResetScreen(props: RouteComponentProps) {
     </LoadingOrError>
   )
 }
+
+export default ResetScreen
