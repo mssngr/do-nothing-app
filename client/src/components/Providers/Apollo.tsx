@@ -18,7 +18,7 @@ export default function Apollo({ children }: { children: any }) {
   const [user, updateUser] = React.useContext(UserContext)
   const httpLink = new HttpLink({
     uri: graphQLEndpoint,
-    headers: user.accessToken && {
+    headers: user.isAuthenticated && user.accessToken && {
       Authorization: `Bearer ${user.accessToken}`,
     },
   })

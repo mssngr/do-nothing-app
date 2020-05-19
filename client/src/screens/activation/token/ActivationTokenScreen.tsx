@@ -36,7 +36,7 @@ export default function ActivationTokenScreen({
 
   React.useEffect(() => {
     activate()
-  }, [])
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   if (isActivated) {
     return (
