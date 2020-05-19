@@ -4,7 +4,6 @@
 
 ### The "Do Nothing App" doesn't quite do nothing. It actually does a lot. It:
 
-- Handles routing via Reach Router
 - Registers new users
 - Generates temporary activation links for new users (it's up to you to send them in an activation email)
 - Activates new users in the DB via the temporary activation links
@@ -14,6 +13,8 @@
 - Lets users change their profile settings (including changing their email and password)
 - Lets users delete their account (deleting them from the DB)
 - Logs users out (destroying their session)
+- Handles routing via Reach Router
+- Handles forms via Formik
 
 ### It also handles some major security concerns, like:
 
@@ -26,6 +27,7 @@
 - Implementing "blind indexes" for encrypted fields, like email, that need to be searchable ([Further Reading](https://itnext.io/indexing-encrypted-database-field-for-searching-e50e7bcfbd80))
 
 ### What you won't see:
+
 - CSS
 - Tests
 
