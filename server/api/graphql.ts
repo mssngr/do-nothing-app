@@ -188,9 +188,17 @@ schema.mutationType({
           if (foundUser) {
             const isLocked = foundUser.passwordAttempts > 4
             if (isLocked) {
-              throw new Error(
+              log.info(
                 `Account is locked. User ${foundUser?.id} must reset their password`
               )
+              const passwordAttempts = foundUser.passwordAttempts + 1
+              await db.user.update({
+                where: { emailIndex },
+                data: {
+                  passwordAttempts,
+                },
+              })
+              return { passwordAttempts }
             }
             const isAuthenticated = await U.checkPass(password, foundUser.hash)
             if (isAuthenticated) {
@@ -214,6 +222,7 @@ schema.mutationType({
               log.info(`${id} successfully logged in`)
               return { id, accessToken, refreshToken }
             }
+            log.info('Passwords do not match')
             const passwordAttempts = foundUser.passwordAttempts + 1
             await db.user.update({
               where: { emailIndex },
@@ -221,7 +230,6 @@ schema.mutationType({
                 passwordAttempts,
               },
             })
-            log.info('Passwords do not match')
             return { passwordAttempts }
           }
           log.info('Email not found')
