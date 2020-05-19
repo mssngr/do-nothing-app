@@ -11,7 +11,7 @@ The Do Nothing Client uses Create React App & Apollo Client to display a "no fri
 - React Context
 - Reach Router
 - Apollo React Client
-- ~Formik~
+- Formik
 - Ramda
 - Prettier
 - Husky
