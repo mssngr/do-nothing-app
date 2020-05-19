@@ -25,10 +25,10 @@ use(
     protectedPaths: [
       'Query.user',
       'Query.users',
-      'Mutation.updateOneUser',
       'Mutation.deleteOneUser',
-      'Mutation.updateEmail',
-      'Mutation.updatePassword',
+      'Mutation.updateOneUserInfo',
+      'Mutation.updateOneUserEmail',
+      'Mutation.updateOneUserPassword',
       'Mutation.sendActivationEmail',
     ],
   })

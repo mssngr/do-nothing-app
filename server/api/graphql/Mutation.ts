@@ -12,17 +12,48 @@ import {
 
 export const Mutation = schema.mutationType({
   definition(t) {
-    t.crud.updateOneUser()
     t.crud.deleteOneUser()
 
-    t.field('updateEmail', {
-      type: 'String',
-      nullable: true,
+    t.field('updateOneUserInfo', {
+      type: 'User',
       args: {
-        id: schema.idArg({ required: true }),
+        firstName: schema.stringArg(),
+        lastName: schema.stringArg(),
+        phone: schema.stringArg(),
+      },
+      async resolve(parent, updates, { token, db, log }) {
+        const id: string = (token as any).id // eslint-disable-line @typescript-eslint/no-explicit-any
+        log.info(`${id} is trying to update their info`)
+        try {
+          if (R.isEmpty(updates)) {
+            throw new Error('No updates were provided')
+          }
+          const encryptedFields: ModelTypes['User'] = R.map(
+            (val: string) => U.encrypt(val),
+            (R.pick(fieldsToEncrypt, updates || {}) || {}) as any // eslint-disable-line @typescript-eslint/no-explicit-any
+          ) as any // eslint-disable-line @typescript-eslint/no-explicit-any
+          const updatedUser = await db.user.update({
+            where: { id },
+            data: encryptedFields,
+          })
+          log.info(`${id} successfully updated their info`)
+          return updatedUser
+        } catch (error) {
+          log.error(error)
+          log.info(`${id} failed to update their info`)
+          throw new Error(error)
+        }
+      },
+    })
+
+    t.field('updateOneUserEmail', {
+      type: 'String',
+      args: {
         email: schema.stringArg({ required: true }),
       },
-      async resolve(parent, { id, email }, { db, log }) {
+      async resolve(parent, { email }, { token, db, log }) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const id: string = (token as any).id
         log.info(`${id} is trying to update their email`)
         try {
           await db.user.update({
@@ -30,25 +61,38 @@ export const Mutation = schema.mutationType({
             data: {
               email: U.encrypt(email),
               emailIndex: U.blindIndex(email),
+              isActivated: false,
             },
           })
+          const activationToken = U.generateToken({
+            id,
+            secret: ACTIVATION_SECRET,
+            expiresIn: '1 day',
+          })
           log.info(`${id} successfully updated their email`)
+          log.info(
+            `Send activation email (http://localhost:3000/activation/${activationToken})`
+          )
           return email
         } catch (error) {
           console.error(error)
           log.info(`${id} failed to update their email`)
-          return null
+          throw new Error(error)
         }
       },
     })
 
-    t.field('updatePassword', {
+    t.field('updateOneUserPassword', {
       type: 'Boolean',
       args: {
-        id: schema.idArg({ required: true }),
         password: schema.stringArg({ required: true }),
       },
-      async resolve(parent, { id, password }, { db, log }) {
+      async resolve(parent, { password }, { token, db, log }) {
+        if (password.length < 8) {
+          throw new Error('Password is not long enough (8 chars minimum)')
+        }
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const id: string = (token as any).id
         log.info(`${id} is trying to update their password`)
         try {
           await db.user.update({
@@ -62,7 +106,7 @@ export const Mutation = schema.mutationType({
         } catch (error) {
           console.error(error)
           log.info(`${id} failed to update their password`)
-          return false
+          throw new Error(error)
         }
       },
     })
@@ -238,7 +282,7 @@ export const Mutation = schema.mutationType({
         log.info('Someone is trying to get an activation email')
         try {
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          const id = (token as any).id
+          const id: string = (token as any).id
           const user = await db.user.findOne({ where: { id } })
           if (user) {
             const activationToken = U.generateToken({

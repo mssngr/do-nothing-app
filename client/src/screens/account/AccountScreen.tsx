@@ -1,14 +1,15 @@
 import React from 'react'
-import { RouteComponentProps } from '@reach/router'
+import { RouteComponentProps, Link } from '@reach/router'
 import * as R from 'ramda'
-import { useQuery, gql, useMutation } from '@apollo/client'
+import { useQuery, gql, useApolloClient } from '@apollo/client'
+import { Formik, Form, Field, ErrorMessage } from 'formik'
+import * as Yup from 'yup'
 import { UserContext } from 'components/Providers/User'
 import LoadingOrError from 'components/LoadingOrError'
-import { useFormik } from 'formik'
 
 const USER = gql`
-  query User($id: ID!) {
-    user(id: $id) {
+  query User {
+    user {
       firstName
       lastName
       phone
@@ -20,177 +21,210 @@ const USER = gql`
   }
 `
 
-const UPDATE_USER = gql`
-  mutation UpdateUser(
-    $id: ID!,
-    $firstName: String,
-    $lastName: String,
-    $phone: String,
-  ) {
-    updateOneUser(where: { id: $id }, data: ) {
+const UPDATE_INFO = gql`
+  mutation UpdateInfo($firstName: String, $lastName: String, $phone: String) {
+    updateOneUserInfo(
+      firstName: $firstName
+      lastName: $lastName
+      phone: $phone
+    ) {
       id
     }
   }
 `
 
 const UPDATE_EMAIL = gql`
-  mutation UpdateEmail($id: ID!, $email: String!) {
-    updateEmail(id: $id, email: $email) {
-      id
-    }
+  mutation UpdateEmail($email: String!) {
+    updateOneUserEmail(email: $email)
   }
 `
 
 const UPDATE_PASSWORD = gql`
-  mutation UpdatePassword($id: ID!, $password: String!) {
-    updatePassword(id: $id, password: $password) {
-      id
-    }
+  mutation UpdatePassword($password: String!) {
+    updateOneUserPassword(password: $password)
   }
 `
 
 const DELETE_USER = gql`
-  mutation DeleteUser($id: ID!) {
+  mutation DeleteUser($id: String!) {
     deleteOneUser(where: { id: $id }) {
       id
     }
   }
 `
 
+const phoneRegExp = /^((\\+[1-9]{1,4}[ \\-]*)|(\\([0-9]{2,3}\\)[ \\-]*)|([0-9]{2,4})[ \\-]*)*?[0-9]{3,4}?[ \\-]*[0-9]{3,4}?$/
+
+export const infoValidation = Yup.object().shape({
+  firstName: Yup.string()
+    .trim()
+    .min(2, 'Too Short!')
+    .max(50, 'Too Long!')
+    .required('Required'),
+  lastName: Yup.string()
+    .trim()
+    .min(2, 'Too Short!')
+    .max(50, 'Too Long!')
+    .required('Required'),
+  phone: Yup.string().trim().matches(phoneRegExp, 'Invalid phone number'),
+})
+
+export const emailValidation = Yup.object().shape({
+  email: Yup.string().trim().email('Invalid email').required('Required'),
+})
+
+export const passwordValidation = Yup.object().shape({
+  password: Yup.string()
+    .trim()
+    .min(8, 'Too Short!')
+    .max(64, 'Too Long!')
+    .required('Required'),
+})
+
 const AccountScreen: React.FC<RouteComponentProps> = ({ navigate }) => {
   const [{ id }] = React.useContext(UserContext)
-  const { data, refetch, ...loadingOrError } = useQuery(USER, {
-    variables: { id },
-  })
-  const user = data?.user
-  const [updateUser] = useMutation(UPDATE_USER)
-  const [updateEmail] = useMutation(UPDATE_EMAIL)
-  const [updatePassword] = useMutation(UPDATE_PASSWORD)
-  const [deleteUser] = useMutation(DELETE_USER, { variables: { id } })
-  const personal = useFormik({
-    initialValues: R.pick(['firstName', 'lastName', 'phone'], user),
-    async onSubmit({ firstName, lastName, phone }) {
-      const { data } = await updateUser({
-        variables: { id, firstName, lastName, phone },
-      })
-      if (!data?.updateOneUser) {
-        window.alert('The update failed, for some reason.')
-      } else {
-        window.alert('Updated successfully.')
-        refetch()
-      }
-    },
-  })
-  const email = useFormik({
-    initialValues: { email: user.email, confirmEmail: '' },
-    async onSubmit({ email, confirmEmail }) {
-      if (email !== confirmEmail) {
-        window.alert('New emails do not match.')
-      } else {
-        const { data } = await updateEmail({
-          variables: { id, email },
-        })
-        if (!data?.updateEmail) {
-          window.alert('The update failed, for some reason.')
-        } else {
-          window.alert(
-            'Updated successfully. An activation email has been sent to your new address. Your access will be limited until you reactivate your account.'
-          )
-          refetch()
-        }
-      }
-    },
-  })
-  const password = useFormik({
-    initialValues: { password: '', confirmPassword: '' },
-    async onSubmit({ password, confirmPassword }) {
-      if (password !== confirmPassword) {
-        window.alert('New passwords do not match.')
-      } else {
-        const { data } = await updatePassword({
-          variables: { id, password },
-        })
-        if (!data?.updatePassword) {
-          window.alert('The update failed, for some reason.')
-        } else {
-          window.alert('Updated successfully.')
-          refetch()
-        }
-      }
-    },
-  })
+  const { data, refetch, ...loadingOrError } = useQuery(USER)
+  const user = data?.user || {
+    firstName: '',
+    lastName: '',
+    phone: '',
+    email: '',
+  }
+  const client = useApolloClient()
 
   async function handleClick(): Promise<void> {
-    await deleteUser()
-    navigate && navigate('/')
+    const { data } = await client.mutate({
+      mutation: DELETE_USER,
+      variables: { id },
+    })
+    if (!data?.deleteOneUser) {
+      window.alert('The delete failed, for some reason.')
+    } else {
+      window.alert('Deleted successfully.')
+      navigate && navigate('/logout')
+    }
   }
 
   return (
     <LoadingOrError {...loadingOrError}>
       <div>
         <h1>Account</h1>
-        <h2>Personal</h2>
-        <form onSubmit={personal.handleSubmit}>
-          <input
-            id="firstName"
-            placeholder="first name"
-            type="text"
-            onChange={personal.handleChange}
-            value={personal.values.firstName}
-          />
-          <input
-            id="lastName"
-            placeholder="last name"
-            type="text"
-            onChange={personal.handleChange}
-            value={personal.values.lastName}
-          />
-          <input
-            id="phone"
-            placeholder="phone"
-            type="tel"
-            onChange={personal.handleChange}
-            value={personal.values.phone}
-          />
-          <button type="submit">Save</button>
-        </form>
-        <h2>Email</h2>
-        <form onSubmit={email.handleSubmit}>
-          <input
-            id="email"
-            placeholder="email"
-            type="email"
-            onChange={email.handleChange}
-            value={email.values.email}
-          />
-          <input
-            id="confirmEmail"
-            placeholder="confirm email"
-            type="email"
-            onChange={email.handleChange}
-            value={email.values.confirmEmail}
-          />
-          <button type="submit">Save</button>
-        </form>
-        <h2>Password</h2>
-        <form onSubmit={password.handleSubmit}>
-          <input
-            id="password"
-            placeholder="password"
-            type="password"
-            onChange={password.handleChange}
-            value={password.values.password}
-          />
-          <input
-            id="confirmPassword"
-            placeholder="confirm password"
-            type="password"
-            onChange={password.handleChange}
-            value={password.values.confirmPassword}
-          />
-          <button type="submit">Save</button>
-        </form>
+        {!user?.isActivated && (
+          <p>
+            Your account has not yet been activated. Your functionality will be
+            limited until you activate your account.
+            <br />
+            <Link to="/activation">Click here to activate your account.</Link>
+          </p>
+        )}
+        <h2>Update Info</h2>
+        <Formik
+          initialValues={R.pick(['firstName', 'lastName', 'phone'], user)}
+          validationSchema={infoValidation}
+          onSubmit={async variables => {
+            const { data, errors } = await client.mutate({
+              mutation: UPDATE_INFO,
+              variables: { ...variables, id },
+            })
+            if (R.isEmpty(errors) || !data?.updateOneUserInfo) {
+              window.alert('The update failed, for some reason.')
+            } else {
+              window.alert('Updated successfully.')
+              refetch()
+            }
+          }}
+          enableReinitialize
+        >
+          {() => (
+            <Form>
+              <Field placeholder="first name" name="firstName" />
+              <ErrorMessage name="firstName" />
+              <Field placeholder="last name" name="lastName" />
+              <ErrorMessage name="lastName" />
+              <Field placeholder="phone number" type="tel" name="phone" />
+              <ErrorMessage name="phone" />
+              <button type="submit">Save</button>
+            </Form>
+          )}
+        </Formik>
+        <h2>Update Email</h2>
+        <Formik
+          initialValues={{ email: user.email, confirmEmail: '' }}
+          validationSchema={emailValidation}
+          onSubmit={async ({ email, confirmEmail }) => {
+            if (email !== confirmEmail) {
+              window.alert('New emails do not match.')
+            } else {
+              const { data, errors } = await client.mutate({
+                mutation: UPDATE_EMAIL,
+                variables: { email },
+              })
+              if (R.isEmpty(errors) || !data?.updateOneUserEmail) {
+                window.alert('The update failed, for some reason.')
+              } else {
+                window.alert(
+                  'Updated successfully. An activation email has been sent to your new address. Your access will be limited until you reactivate your account.'
+                )
+                refetch()
+              }
+            }
+          }}
+          enableReinitialize
+        >
+          {() => (
+            <Form>
+              <Field placeholder="email" type="email" name="email" />
+              <ErrorMessage name="email" />
+              <Field
+                placeholder="confirm email"
+                type="email"
+                name="confirmEmail"
+              />
+              <button type="submit">Save</button>
+            </Form>
+          )}
+        </Formik>
+        <h2>Update Password</h2>
+        <Formik
+          initialValues={{ password: '', confirmPassword: '' }}
+          validationSchema={passwordValidation}
+          onSubmit={async ({ password, confirmPassword }) => {
+            if (password !== confirmPassword) {
+              window.alert('New passwords do not match.')
+            } else {
+              const { data, errors } = await client.mutate({
+                mutation: UPDATE_PASSWORD,
+                variables: { password },
+              })
+              if (R.isEmpty(errors) || !data?.updateOneUserPassword) {
+                window.alert('The update failed, for some reason.')
+              } else {
+                window.alert('Updated successfully.')
+                refetch()
+              }
+            }
+          }}
+        >
+          {() => (
+            <Form>
+              <Field placeholder="password" type="password" name="password" />
+              <ErrorMessage name="password" />
+              <Field
+                placeholder="confirm password"
+                type="password"
+                name="confirmPassword"
+              />
+              <button type="submit">Save</button>
+            </Form>
+          )}
+        </Formik>
+        <h2>Delete Account</h2>
         <button onClick={handleClick}>Delete Account</button>
+        <br />
+        <br />
+        <Link to="/home">Go Home</Link>
+        <br />
+        <Link to="/logout">Logout</Link>
       </div>
     </LoadingOrError>
   )

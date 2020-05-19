@@ -1,11 +1,13 @@
 import React from 'react'
 import { RouteComponentProps, Link } from '@reach/router'
 import { useMutation, gql } from '@apollo/client'
+import { Formik, Field, ErrorMessage, Form } from 'formik'
 import LoadingOrError from 'components/LoadingOrError'
+import { passwordValidation } from 'screens/account/AccountScreen'
 
 const RESET_PASSWORD = gql`
-  mutation ResetPassword($resetToken: String!, $newPassword: String!) {
-    resetPassword(resetToken: $resetToken, newPassword: $newPassword)
+  mutation ResetPassword($resetToken: String!, $password: String!) {
+    resetPassword(resetToken: $resetToken, password: $password)
   }
 `
 
@@ -16,23 +18,6 @@ const ResetTokenScreen: React.FC<
     RESET_PASSWORD
   )
   const isReset = data?.resetPassword
-
-  async function handleSubmit(e: React.FormEvent): Promise<void> {
-    e.preventDefault()
-    const newPassword = (e.currentTarget.children[0] as HTMLInputElement).value
-    const confirmPassword = (e.currentTarget.children[1] as HTMLInputElement)
-      .value
-
-    if (newPassword !== confirmPassword) {
-      window.alert('Passwords do not match')
-    } else if (newPassword.length < 8) {
-      window.alert('Password is not long enough (8 characters minimum)')
-    } else {
-      await resetPassword({
-        variables: { resetToken, newPassword },
-      })
-    }
-  }
 
   if (isReset) {
     return (
@@ -59,11 +44,30 @@ const ResetTokenScreen: React.FC<
 
   return (
     <LoadingOrError {...loadingOrError}>
-      <form onSubmit={handleSubmit}>
-        <input placeholder="new password" type="password" />
-        <input placeholder="confirm new password" type="password" />
-        <button type="submit">Reset Password</button>
-      </form>
+      <Formik
+        initialValues={{ password: '', confirmPassword: '' }}
+        validationSchema={passwordValidation}
+        onSubmit={({ password, confirmPassword }) => {
+          if (password !== confirmPassword) {
+            window.alert('New passwords do not match.')
+          } else {
+            resetPassword({ variables: { password, resetToken } })
+          }
+        }}
+      >
+        {() => (
+          <Form>
+            <Field placeholder="password" type="password" name="password" />
+            <ErrorMessage name="password" />
+            <Field
+              placeholder="confirm password"
+              type="password"
+              name="confirmPassword"
+            />
+            <button type="submit">Reset Password</button>
+          </Form>
+        )}
+      </Formik>
     </LoadingOrError>
   )
 }

@@ -1,10 +1,15 @@
 import React from 'react'
 import * as R from 'ramda'
-import { RouteComponentProps, navigate } from '@reach/router'
+import { RouteComponentProps } from '@reach/router'
 import { useMutation, gql } from '@apollo/client'
+import { Formik, Form, Field, ErrorMessage } from 'formik'
 import { UserContext } from 'components/Providers/User'
 import LoadingOrError from 'components/LoadingOrError'
-import { useFormik } from 'formik'
+import {
+  infoValidation,
+  emailValidation,
+  passwordValidation,
+} from 'screens/account/AccountScreen'
 
 const SIGN_UP = gql`
   mutation Signup(
@@ -28,106 +33,83 @@ const SIGN_UP = gql`
   }
 `
 
-const SignupScreen: React.FC<RouteComponentProps> = () => {
+const validation = infoValidation
+  .concat(emailValidation)
+  .concat(passwordValidation)
+
+const SignupScreen: React.FC<RouteComponentProps> = ({ navigate }) => {
   const updateUser = React.useContext(UserContext)[1]
   const [signup, loadingOrError] = useMutation(SIGN_UP)
-  const { handleSubmit, handleChange, values } = useFormik({
-    initialValues: {
-      firstName: '',
-      lastName: '',
-      phone: '',
-      email: '',
-      confirmEmail: '',
-      password: '',
-      confirmPassword: '',
-    },
-    async onSubmit({
-      firstName,
-      lastName,
-      phone,
-      email,
-      confirmEmail,
-      password,
-      confirmPassword,
-    }) {
-      if (password !== confirmPassword) {
-        window.alert('Passwords do not match')
-      } else if (email !== confirmEmail) {
-        window.alert('Emails do not match')
-      } else if (password.length < 8) {
-        window.alert('Password is not long enough (8 characters minimum)')
-      } else {
-        const { data } = await signup({
-          variables: { firstName, lastName, email, password, phone },
-        })
-        const newUser = data?.signup
-        updateUser({
-          ...R.pick(['id', 'accessToken', 'refreshToken'], newUser),
-          isAuthenticated: true,
-        })
-        window.alert(
-          'An activation link was sent to your email. Please follow the link to activate your account. You have 24 hours before it expires.'
-        )
-        navigate('/home')
-      }
-    },
-  })
 
   return (
     <LoadingOrError {...loadingOrError}>
       <div>
-        <form onSubmit={handleSubmit}>
-          <input
-            id="firstName"
-            placeholder="first name"
-            type="text"
-            onChange={handleChange}
-            value={values.firstName}
-          />
-          <input
-            id="lastName"
-            placeholder="last name"
-            type="text"
-            onChange={handleChange}
-            value={values.lastName}
-          />
-          <input
-            id="phone"
-            placeholder="phone"
-            type="tel"
-            onChange={handleChange}
-            value={values.phone}
-          />
-          <input
-            id="email"
-            placeholder="email"
-            type="email"
-            onChange={handleChange}
-            value={values.email}
-          />
-          <input
-            id="confirmEmail"
-            placeholder="confirm email"
-            type="email"
-            onChange={handleChange}
-            value={values.confirmEmail}
-          />
-          <input
-            id="password"
-            placeholder="password"
-            type="password"
-            onChange={handleChange}
-            value={values.password}
-          />
-          <input
-            id="confirmPassword"
-            placeholder="confirm password"
-            type="password"
-            onChange={handleChange}
-            value={values.confirmPassword}
-          />
-          <button type="submit">Sign Up</button>
-        </form>
+        <Formik
+          initialValues={{
+            firstName: '',
+            lastName: '',
+            phone: '',
+            email: '',
+            confirmEmail: '',
+            password: '',
+            confirmPassword: '',
+          }}
+          validationSchema={validation}
+          onSubmit={async ({
+            firstName,
+            lastName,
+            phone,
+            email,
+            confirmEmail,
+            password,
+            confirmPassword,
+          }) => {
+            if (password !== confirmPassword) {
+              window.alert('Passwords do not match')
+            } else if (email !== confirmEmail) {
+              window.alert('Emails do not match')
+            } else {
+              const { data } = await signup({
+                variables: { firstName, lastName, email, password, phone },
+              })
+              const newUser = data?.signup
+              updateUser({
+                ...R.pick(['id', 'accessToken', 'refreshToken'], newUser),
+                isAuthenticated: true,
+              })
+              window.alert(
+                'An activation link was sent to your email. Please follow the link to activate your account. You have 24 hours before it expires.'
+              )
+              navigate && navigate('/home')
+            }
+          }}
+        >
+          {() => (
+            <Form>
+              <Field placeholder="first name" name="firstName" />
+              <ErrorMessage name="firstName" />
+              <Field placeholder="last name" name="lastName" />
+              <ErrorMessage name="lastName" />
+              <Field placeholder="phone number" type="tel" name="phone" />
+              <ErrorMessage name="phone" />
+              <Field placeholder="email" type="email" name="email" />
+              <ErrorMessage name="email" />
+              <Field
+                placeholder="confirm email"
+                type="email"
+                name="confirmEmail"
+              />
+              <Field placeholder="password" type="password" name="password" />
+              <ErrorMessage name="password" />
+              <Field
+                placeholder="confirm password"
+                type="password"
+                name="confirmPassword"
+              />
+              <button type="submit">Sign Up</button>
+            </Form>
+          )}
+        </Formik>
       </div>
     </LoadingOrError>
   )

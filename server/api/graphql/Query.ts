@@ -11,14 +11,17 @@ export const Query = schema.queryType({
       type: 'User',
       nullable: true,
       args: {
-        id: schema.idArg({ required: true }),
+        id: schema.idArg(),
       },
-      async resolve(parent, { id }, { db, log }) {
-        log.info(`Someone is trying to find User: ${id}`)
+      async resolve(parent, { id: providedID }, { token, db, log }) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const userID: string = (token as any).id
+        const id = providedID || userID
+        log.info(`${userID || 'Someone'} is trying to find User: ${id}`)
         try {
           const encryptedUser = await db.user.findOne({ where: { id } })
           if (encryptedUser) {
-            log.info(`Someone successfully found User: ${id}`)
+            log.info(`${userID || 'Someone'} successfully found User: ${id}`)
             const decryptedUser = R.mapObjIndexed(
               (text, key) =>
                 fieldsToEncrypt.includes(key)
@@ -26,12 +29,15 @@ export const Query = schema.queryType({
                   : text,
               encryptedUser
             ) as ModelTypes['User']
+            log.info(
+              `${userID || 'Someone'} successfully decrypted User: ${id}`
+            )
             return decryptedUser
           }
           throw new Error(`User: ${id} could not be found`)
         } catch (error) {
           log.error(error)
-          log.info(`Someone failted to find User: ${id}`)
+          log.info(`${userID || 'Someone'} failed to find User: ${id}`)
           return null
         }
       },

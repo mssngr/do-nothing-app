@@ -1,8 +1,9 @@
 import React from 'react'
 import { RouteComponentProps, Link } from '@reach/router'
 import { useMutation, gql } from '@apollo/client'
-import { useFormik } from 'formik'
+import { Formik, Field, ErrorMessage, Form } from 'formik'
 import LoadingOrError from 'components/LoadingOrError'
+import { emailValidation } from 'screens/account/AccountScreen'
 
 const SEND_RESET_EMAIL = gql`
   mutation SendResetEmail($email: String!) {
@@ -15,14 +16,6 @@ const ResetScreen: React.FC<RouteComponentProps> = () => {
     SEND_RESET_EMAIL
   )
   const isEmailSent = data?.sendResetEmail
-  const { handleSubmit, handleChange, values } = useFormik({
-    initialValues: {
-      email: '',
-    },
-    onSubmit({ email }) {
-      sendResetEmail({ variables: { email } })
-    },
-  })
 
   return (
     <LoadingOrError {...loadingOrError}>
@@ -38,17 +31,22 @@ const ResetScreen: React.FC<RouteComponentProps> = () => {
         </div>
       ) : (
         <div>
-          <form onSubmit={handleSubmit}>
-            <input
-              id="email"
-              placeholder="email"
-              type="email"
-              onChange={handleChange}
-              value={values.email}
-            />
-            <button type="submit">Reset Password</button>
-            {isEmailSent === false && <p>No record of that email exists</p>}
-          </form>
+          <Formik
+            initialValues={{ email: '' }}
+            validationSchema={emailValidation}
+            onSubmit={({ email }) => {
+              sendResetEmail({ variables: { email } })
+            }}
+          >
+            {() => (
+              <Form>
+                <Field name="email" placeholder="email" type="email" />
+                <ErrorMessage name="email" />
+                <button type="submit">Reset Password</button>
+                {isEmailSent === false && <p>No record of that email exists</p>}
+              </Form>
+            )}
+          </Formik>
           <Link to="/login">Log In</Link>
           <br />
           <Link to="/signup">Sign Up</Link>
