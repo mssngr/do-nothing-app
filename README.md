@@ -4,6 +4,7 @@
 
 The "Do Nothing App" doesn't quite do nothing. It actually does a lot. It:
 
+- Handles routing via Reach Router
 - Registers new users
 - Generates temporary activation links for new users (it's up to you to send them in an activation email)
 - Activates new users in the DB via the temporary activation links

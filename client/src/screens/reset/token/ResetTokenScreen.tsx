@@ -24,6 +24,8 @@ export default function ResetTokenScreen({
 
     if (newPassword !== confirmPassword) {
       window.alert('Passwords do not match')
+    } else if (newPassword.length < 8) {
+      window.alert('Password is not long enough (8 characters minimum)')
     } else {
       await resetPassword({
         variables: { resetToken, newPassword },

@@ -42,6 +42,8 @@ export default function SignupScreen(props: RouteComponentProps) {
 
     if (password !== confirmPassword) {
       window.alert('Passwords do not match')
+    } else if (password.length < 8) {
+      window.alert('Password is not long enough (8 characters minimum)')
     } else {
       const { data } = await signup({
         variables: { firstName, lastName, email, password, phone },

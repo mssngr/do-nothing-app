@@ -1,6 +1,6 @@
 import { schema } from 'nexus'
-import * as R from 'ramda'
 import jwt from 'jsonwebtoken'
+import * as R from 'ramda'
 import * as U from './utils'
 
 schema.objectType({
@@ -8,10 +8,10 @@ schema.objectType({
   definition(t) {
     t.model.id()
     t.model.email()
-    t.model.emailIndex()
     t.model.phone()
     t.model.firstName()
     t.model.lastName()
+    t.model.passwordAttempts()
     t.model.isActivated()
     t.model.createdAt()
     t.model.updatedAt()
@@ -28,9 +28,10 @@ schema.objectType({
 schema.objectType({
   name: 'AccessCredentials',
   definition(t) {
-    t.field('id', { type: 'ID' })
-    t.field('accessToken', { type: 'String' })
-    t.field('refreshToken', { type: 'String' })
+    t.field('id', { type: 'ID', nullable: true })
+    t.field('accessToken', { type: 'String', nullable: true })
+    t.field('refreshToken', { type: 'String', nullable: true })
+    t.field('passwordAttempts', { type: 'Int', nullable: true })
   },
 })
 
@@ -172,6 +173,7 @@ schema.mutationType({
 
     t.field('login', {
       type: 'AccessCredentials',
+      nullable: true,
       args: {
         email: schema.stringArg({ required: true }),
         password: schema.stringArg({ required: true }),
@@ -183,29 +185,47 @@ schema.mutationType({
           const foundUser = await db.user.findOne({
             where: { emailIndex },
           })
-          const isAuthenticated =
-            foundUser && (await U.checkPass(password, foundUser.hash))
-          if (isAuthenticated) {
-            const id = foundUser?.id as string
-            const refreshToken = U.generateToken({
-              id,
-              secret: U.REFRESH_SECRET,
-            })
-            const accessToken = U.generateToken({
-              id,
-              secret: U.ACCESS_SECRET,
-              expiresIn: '1 hour',
-            })
+          if (foundUser) {
+            const isLocked = foundUser.passwordAttempts > 4
+            if (isLocked) {
+              throw new Error(
+                `Account is locked. User ${foundUser?.id} must reset their password`
+              )
+            }
+            const isAuthenticated = await U.checkPass(password, foundUser.hash)
+            if (isAuthenticated) {
+              const id = foundUser?.id as string
+              const refreshToken = U.generateToken({
+                id,
+                secret: U.REFRESH_SECRET,
+              })
+              const accessToken = U.generateToken({
+                id,
+                secret: U.ACCESS_SECRET,
+                expiresIn: '1 hour',
+              })
+              await db.user.update({
+                where: { id },
+                data: {
+                  refreshedAt: new Date(),
+                  passwordAttempts: 0,
+                },
+              })
+              log.info(`${id} successfully logged in`)
+              return { id, accessToken, refreshToken }
+            }
+            const passwordAttempts = foundUser.passwordAttempts + 1
             await db.user.update({
-              where: { id },
+              where: { emailIndex },
               data: {
-                refreshedAt: new Date(),
+                passwordAttempts,
               },
             })
-            log.info(`${id} successfully logged in`)
-            return { id, accessToken, refreshToken }
+            log.info('Passwords do not match')
+            return { passwordAttempts }
           }
-          throw new Error('Email not found or passwords do not match')
+          log.info('Email not found')
+          return null
         } catch (error) {
           log.error(error)
           log.info('Someone failed to log in')
@@ -226,6 +246,9 @@ schema.mutationType({
       async resolve(parent, newUser, { db, log }) {
         try {
           log.info('Someone is trying to sign up')
+          if (newUser.password.length < 8) {
+            throw new Error('Password is not long enough (8 chars minimum)')
+          }
           const encryptedFields: any = R.map(
             (val: string) => U.encrypt(val),
             R.pick(U.fieldsToEncrypt, newUser) as any
@@ -352,10 +375,16 @@ schema.mutationType({
       async resolve(parent, { resetToken, newPassword }, { db, log }) {
         log.info('Someone is trying to reset their password')
         try {
+          if (newPassword.length < 8) {
+            throw new Error('Password is not long enough (8 chars minimum)')
+          }
           const verifiedToken = jwt.verify(resetToken, U.ACTIVATION_SECRET)
           const id = (verifiedToken as any).id
           const hash = await U.hash(newPassword)
-          await db.user.update({ where: { id }, data: { hash } })
+          await db.user.update({
+            where: { id },
+            data: { hash, passwordAttempts: 0 },
+          })
           log.info(`${id} successfully reset their password`)
           return true
         } catch (error) {

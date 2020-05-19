@@ -11,6 +11,7 @@ const LOGIN = gql`
       id
       refreshToken
       accessToken
+      passwordAttempts
     }
   }
 `
@@ -19,6 +20,7 @@ export default function LoginScreen(props: RouteComponentProps) {
   const [user, updateUser] = React.useContext(UserContext)
   const [login, loadingOrError] = useMutation(LOGIN)
   const [isIncorrect, setIsIncorrect] = React.useState(false)
+  const [isLocked, setIsLocked] = React.useState(false)
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -27,7 +29,7 @@ export default function LoginScreen(props: RouteComponentProps) {
     const { data } = await login({ variables: { email, password } })
     const loggedInUser = data?.login
 
-    if (loggedInUser) {
+    if (loggedInUser?.id) {
       updateUser({
         ...R.pick(['id', 'accessToken', 'refreshToken'], loggedInUser),
         isAuthenticated: true,
@@ -35,6 +37,7 @@ export default function LoginScreen(props: RouteComponentProps) {
       navigate('/home')
     } else {
       setIsIncorrect(true)
+      loggedInUser?.passwordAttempts > 4 && setIsLocked(true)
     }
   }
 
@@ -50,6 +53,7 @@ export default function LoginScreen(props: RouteComponentProps) {
           <input placeholder="password" type="password" />
           <button type="submit">Log In</button>
           {isIncorrect && <p>Incorrect email or password</p>}
+          {isLocked && <p>Due to too many password attempts, your account has been locked. Please reset your password to regain access to your account.</p>}
         </form>
         <Link to="/signup">Sign Up</Link>
         <br />
