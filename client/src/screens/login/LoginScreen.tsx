@@ -17,7 +17,7 @@ const LOGIN = gql`
 
 export default function LoginScreen(props: RouteComponentProps) {
   const [user, updateUser] = React.useContext(UserContext)
-  const [login, { loading, error }] = useMutation(LOGIN)
+  const [login, loadingOrError] = useMutation(LOGIN)
   const [isIncorrect, setIsIncorrect] = React.useState(false)
 
   async function handleSubmit(e: React.FormEvent) {
@@ -43,7 +43,7 @@ export default function LoginScreen(props: RouteComponentProps) {
   }
 
   return (
-    <LoadingOrError loading={loading} error={error}>
+    <LoadingOrError {...loadingOrError}>
       <div>
         <form onSubmit={handleSubmit}>
           <input placeholder="email" type="email" />

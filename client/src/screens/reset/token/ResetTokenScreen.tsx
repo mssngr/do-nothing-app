@@ -12,7 +12,7 @@ const RESET_PASSWORD = gql`
 export default function ResetTokenScreen({
   resetToken,
 }: { resetToken?: string } & RouteComponentProps) {
-  const [reset, { loading, error, data }] = useMutation(RESET_PASSWORD, {
+  const [reset, { data, ...loadingOrError }] = useMutation(RESET_PASSWORD, {
     variables: { resetToken },
   })
   const isReset = data?.resetPassword
@@ -22,7 +22,7 @@ export default function ResetTokenScreen({
   })
 
   return (
-    <LoadingOrError loading={loading} error={error}>
+    <LoadingOrError {...loadingOrError}>
       {isReset ? (
         <div>
           <h1>

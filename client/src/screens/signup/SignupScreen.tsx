@@ -29,7 +29,7 @@ const SIGN_UP = gql`
 
 export default function SignupScreen(props: RouteComponentProps) {
   const updateUser = React.useContext(UserContext)[1]
-  const [signup, { loading, error }] = useMutation(SIGN_UP)
+  const [signup, loadingOrError] = useMutation(SIGN_UP)
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -59,7 +59,7 @@ export default function SignupScreen(props: RouteComponentProps) {
   }
 
   return (
-    <LoadingOrError loading={loading} error={error}>
+    <LoadingOrError {...loadingOrError}>
       <div>
         <form onSubmit={handleSubmit}>
           <input placeholder="first name" type="text" />

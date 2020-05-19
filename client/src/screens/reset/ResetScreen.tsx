@@ -10,7 +10,7 @@ const SEND_RESET_EMAIL = gql`
 `
 
 export default function ResetScreen(props: RouteComponentProps) {
-  const [sendResetEmail, { loading, error, data }] = useMutation(
+  const [sendResetEmail, { data, ...loadingOrError }] = useMutation(
     SEND_RESET_EMAIL
   )
   const isEmailSent = data?.sendResetEmail
@@ -22,7 +22,7 @@ export default function ResetScreen(props: RouteComponentProps) {
   }
 
   return (
-    <LoadingOrError loading={loading} error={error}>
+    <LoadingOrError {...loadingOrError}>
       {isEmailSent ? (
         <div>
           <h1>
