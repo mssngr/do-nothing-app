@@ -21,14 +21,14 @@ export default function HomeScreen(props: RouteComponentProps) {
   return (
     <LoadingOrError {...loadingOrError}>
       <div>
-        {!user.isActivated && (
+        {!user?.isActivated && (
           <p>
             Your account has not yet been activated. Your functionality will be
             limited until you activate your account.{' '}
             <Link to="/activation">Click here to activate your account.</Link>
           </p>
         )}
-        <h1>Hi {user.firstName}! Welcome to the home page.</h1>
+        <h1>Hi {user?.firstName}! Welcome to the home page.</h1>
         <Link to="/logout">Logout</Link>
       </div>
     </LoadingOrError>

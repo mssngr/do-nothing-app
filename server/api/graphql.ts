@@ -184,7 +184,7 @@ schema.mutationType({
             where: { emailIndex },
           })
           const isAuthenticated =
-            foundUser && U.checkPass(password, foundUser.hash)
+            foundUser && (await U.checkPass(password, foundUser.hash))
           if (isAuthenticated) {
             const id = foundUser?.id as string
             const refreshToken = U.generateToken({
@@ -252,7 +252,7 @@ schema.mutationType({
           })
           log.info(`${createdUser.id} successfully signed up`)
           log.info(
-            `Send activation email (https://<insert-domain>/activation/${activationToken})`
+            `Send activation email (http://localhost:3000/activation/${activationToken})`
           )
           return { id, accessToken, refreshToken }
         } catch (error) {
@@ -265,14 +265,11 @@ schema.mutationType({
 
     t.field('sendActivationEmail', {
       type: 'Boolean',
-      args: {
-        email: schema.stringArg({ required: true }),
-      },
-      async resolve(parent, { email }, { db, log }) {
+      async resolve(parent, args, { db, log, token }) {
         log.info('Someone is trying to get an activation email')
         try {
-          const emailIndex = U.blindIndex(email)
-          const user = await db.user.findOne({ where: { emailIndex } })
+          const id = (token as any).id
+          const user = await db.user.findOne({ where: { id } })
           if (user) {
             const activationToken = U.generateToken({
               id: user.id,
@@ -280,7 +277,7 @@ schema.mutationType({
               expiresIn: '1 hour',
             })
             log.info(
-              `Send activation email (https://<insert-domain>/activation/${activationToken})`
+              `Send activation email (http://localhost:3000/activation/${activationToken})`
             )
             log.info(`${user.id} successfully got a reset password email`)
             return true
@@ -332,7 +329,7 @@ schema.mutationType({
               expiresIn: '1 hour',
             })
             log.info(
-              `Send reset password email (https://<insert-domain>/reset/${activationToken})`
+              `Send reset password email (http://localhost:3000/reset/${activationToken})`
             )
             log.info(`${user.id} successfully got a reset password email`)
             return true

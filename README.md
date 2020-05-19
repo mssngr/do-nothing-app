@@ -18,8 +18,9 @@ It also handles some major security concerns, like:
 
 - Securing API interactions (via JWTs)
 - Blocking brute force password attacks via limiting failed password attempts to 5 before deactivating the account (requiring another activation email)
-- Securely storing passwords via `bcrypt` (which utilizes "salting" and "hash stretching" methodologies - [Further Reading](https://nakedsecurity.sophos.com/2013/11/20/serious-security-how-to-store-your-users-passwords-safely/), [More Further Reading](https://codahale.com/how-to-safely-store-a-password/))
+- Securely storing passwords via `bcrypt` (which utilizes "salting" and "hash stretching" methodologies) ([Further Reading](https://nakedsecurity.sophos.com/2013/11/20/serious-security-how-to-store-your-users-passwords-safely/), [More Further Reading](https://codahale.com/how-to-safely-store-a-password/))
 - Encrypting PII (Personally Identifying Information) like names, phone numbers, and emails via AES-128
+- Implements "blind indexes" for encrypted fields, like email, that need to be searchable ([Further Reading](https://itnext.io/indexing-encrypted-database-field-for-searching-e50e7bcfbd80))
 
 Use this repo as a baseline to create your next big app. The annoying bits of app development boilerplate listed above are taken care of for you. The rest is up to you.
 

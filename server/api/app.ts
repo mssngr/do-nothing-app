@@ -14,12 +14,9 @@ use(
     protectedPaths: [
       'Query.user',
       'Query.users',
-      'Mutation.createOneUser',
-      'Mutation.upsertOneUser',
       'Mutation.updateOneUser',
-      'Mutation.updateManyUser',
       'Mutation.deleteOneUser',
-      'Mutation.deleteManyUser',
+      'Mutation.sendActivationEmail',
     ],
   })
 )

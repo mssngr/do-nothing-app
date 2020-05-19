@@ -1,21 +1,18 @@
 import React from 'react'
 import { RouteComponentProps, Link } from '@reach/router'
 import { useMutation, gql } from '@apollo/client'
-import { UserContext } from 'components/Providers/User'
 import LoadingOrError from 'components/LoadingOrError'
 
 const SEND_ACTIVATION_EMAIL = gql`
-  mutation SendActivationEmail($id: ID!) {
-    sendActivationEmail(id: $id)
+  mutation {
+    sendActivationEmail
   }
 `
 
 export default function ActivationScreen(props: RouteComponentProps) {
-  const [user] = React.useContext(UserContext)
-  const [
-    sendActivationEmail,
-    { loading, error, data },
-  ] = useMutation(SEND_ACTIVATION_EMAIL, { variables: { id: user.id } })
+  const [sendActivationEmail, { loading, error, data }] = useMutation(
+    SEND_ACTIVATION_EMAIL
+  )
   const isEmailSent = data?.sendActivationEmail
 
   async function handleClick(e: React.MouseEvent) {

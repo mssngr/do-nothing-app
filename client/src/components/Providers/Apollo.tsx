@@ -18,6 +18,9 @@ export default function Apollo({ children }: { children: any }) {
   const [user, updateUser] = React.useContext(UserContext)
   const httpLink = new HttpLink({
     uri: graphQLEndpoint,
+    headers: user.accessToken && {
+      Authorization: `Bearer ${user.accessToken}`,
+    },
   })
   const reAuthLink = onError(({ networkError }) => {
     if ((networkError as ServerError | ServerParseError)?.statusCode === 401) {
@@ -27,7 +30,6 @@ export default function Apollo({ children }: { children: any }) {
   const client = new ApolloClient({
     cache: new InMemoryCache(),
     link: reAuthLink.concat(httpLink),
-    headers: { Authorization: user.accessToken },
     defaultOptions: {
       query: { errorPolicy: 'all' },
       watchQuery: { errorPolicy: 'all' },
@@ -44,7 +46,7 @@ async function reAuth(
     id?: string
     accessToken?: string
     refreshToken?: string
-    isActive?: boolean
+    isAuthenticated?: boolean
   }) => void
 ) {
   try {

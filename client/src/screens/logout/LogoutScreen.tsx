@@ -8,10 +8,9 @@ export default function LogoutScreen(props: RouteComponentProps) {
   const user = userContext[0]
   const invalidateUser = userContext[2]
   const client = useApolloClient()
-  console.log('render')
 
   React.useEffect(() => {
-    if (user.isActive || user.accessToken || user.refreshToken) {
+    if (user.isAuthenticated || user.accessToken || user.refreshToken) {
       invalidateUser(client)
     }
   })

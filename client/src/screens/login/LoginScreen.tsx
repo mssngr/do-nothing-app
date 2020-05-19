@@ -30,7 +30,7 @@ export default function LoginScreen(props: RouteComponentProps) {
     if (loggedInUser) {
       updateUser({
         ...R.pick(['id', 'accessToken', 'refreshToken'], loggedInUser),
-        isActive: true,
+        isAuthenticated: true,
       })
       navigate('/home')
     } else {
@@ -38,7 +38,7 @@ export default function LoginScreen(props: RouteComponentProps) {
     }
   }
 
-  if (user.isActive) {
+  if (user.isAuthenticated) {
     return <Redirect to="/home" noThrow />
   }
 

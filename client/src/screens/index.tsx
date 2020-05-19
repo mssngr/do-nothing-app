@@ -20,13 +20,13 @@ export default function Screens() {
         <HomeScreen path="/home" />
         <SignupScreen path="/signup" />
         <ActivationScreen path="/activation/" />
-        <ActivationTokenScreen path="/activate/:activationToken" />
+        <ActivationTokenScreen path="/activation/:activationToken" />
         <LoginScreen path="/login" />
         <LogoutScreen path="/logout" />
         <ResetScreen path="/reset" />
         <ResetTokenScreen path="/reset/:resetToken" />
+        <NotFoundScreen default />
       </Auth>
-      <NotFoundScreen default />
     </Router>
   )
 }
@@ -34,7 +34,7 @@ export default function Screens() {
 function LandingScreen(props: RouteComponentProps) {
   const [user] = React.useContext(UserContext)
 
-  if (user.isActive) {
+  if (user.isAuthenticated) {
     return <Redirect to="/home" noThrow />
   }
 

@@ -1,6 +1,5 @@
 import React from 'react'
 import { useApolloClient, gql } from '@apollo/client'
-import { WindowLocation } from '@reach/router'
 import { UserContext } from 'components/Providers/User'
 
 const VERIFY = gql`
@@ -15,9 +14,7 @@ const REFRESH = gql`
   }
 `
 
-const publicRoutes = ['^/', '^/signup', '^/login', '^/logout', '^/reset.*']
-
-export default function useAuth(location?: WindowLocation) {
+export default function useAuth() {
   const client = useApolloClient()
   const [user, updateUser] = React.useContext(UserContext)
   const [state, setState] = React.useState<{
@@ -27,13 +24,8 @@ export default function useAuth(location?: WindowLocation) {
   const hasYetToVerifyOrRefresh =
     state.isVerified === undefined ||
     (state.isRefreshed === undefined && !!user.refreshToken)
-  const isPublicPath = publicRoutes.some(route => {
-    const publicRouteRegex = new RegExp(route)
-    return !location?.pathname?.match(publicRouteRegex)
-  })
 
-  const isAuthenticated = user.isActive || isPublicPath
-  const isAuthenticating = !isAuthenticated && hasYetToVerifyOrRefresh
+  const isAuthenticating = !user.isAuthenticated && hasYetToVerifyOrRefresh
 
   async function verify() {
     try {
@@ -45,7 +37,7 @@ export default function useAuth(location?: WindowLocation) {
         const id = data?.verify
 
         if (id) {
-          updateUser({ id, isActive: true })
+          updateUser({ id, isAuthenticated: true })
           // setState({ isRefreshed: true, isVerified: true })
         } else {
           setState({ ...state, isVerified: false })
@@ -83,11 +75,11 @@ export default function useAuth(location?: WindowLocation) {
     }
   }
 
-  if (!isAuthenticated && state.isVerified === undefined) {
+  if (!user.isAuthenticated && state.isVerified === undefined) {
     verify()
-  } else if (!isAuthenticated && state.isRefreshed === undefined) {
+  } else if (!user.isAuthenticated && state.isRefreshed === undefined) {
     refresh()
   }
 
-  return [isAuthenticated, isAuthenticating]
+  return [user.isAuthenticated, isAuthenticating]
 }

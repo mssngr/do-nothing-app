@@ -11,35 +11,39 @@ export const UserContext = React.createContext<
       id: string
       accessToken: string
       refreshToken: string
-      isActive: boolean
+      isAuthenticated: boolean
     },
     (updates: {
       id?: string
       accessToken?: string
       refreshToken?: string
-      isActive?: boolean
+      isAuthenticated?: boolean
     }) => void,
     (client?: ApolloClient<any>) => void
   ]
->([{ id, accessToken, refreshToken, isActive: false }, () => null, () => null])
+>([
+  { id, accessToken, refreshToken, isAuthenticated: false },
+  () => null,
+  () => null,
+])
 
 export default function User({ children }: { children: any }) {
   const [user, setUser] = React.useState({
     id,
     accessToken,
     refreshToken,
-    isActive: false,
+    isAuthenticated: false,
   })
 
   function updateUser(updates: {
     id?: string
     accessToken?: string
     refreshToken?: string
-    isActive?: boolean
+    isAuthenticated?: boolean
   }) {
     R.forEachObjIndexed(
       (value, key) => localStorage.setItem(key, `${value}`),
-      updates
+      R.omit(['isAuthenticated'], updates)
     )
     setUser({ ...user, ...updates })
   }
@@ -47,7 +51,12 @@ export default function User({ children }: { children: any }) {
   function invalidateUser(client?: ApolloClient<any>) {
     client && client.resetStore()
     R.forEachObjIndexed((value, key) => localStorage.removeItem(key), user)
-    setUser({ id: '', accessToken: '', refreshToken: '', isActive: false })
+    setUser({
+      id: '',
+      accessToken: '',
+      refreshToken: '',
+      isAuthenticated: false,
+    })
   }
 
   return (

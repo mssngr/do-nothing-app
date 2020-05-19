@@ -6,8 +6,8 @@ import LoadingOrError from 'components/LoadingOrError'
 import { ActivationEmailSent } from '../ActivationScreen'
 
 const SEND_ACTIVATION_EMAIL = gql`
-  mutation SendActivationEmail($id: ID!) {
-    sendActivationEmail(id: $id)
+  mutation {
+    sendActivationEmail
   }
 `
 
@@ -24,10 +24,9 @@ export default function ActivationTokenScreen({
   const [activate, activateResponse] = useMutation(ACTIVATE, {
     variables: { activationToken },
   })
-  const [
-    sendActivationEmail,
-    sendActivationEmailResponse,
-  ] = useMutation(SEND_ACTIVATION_EMAIL, { variables: { id: user.id } })
+  const [sendActivationEmail, sendActivationEmailResponse] = useMutation(
+    SEND_ACTIVATION_EMAIL
+  )
   const isEmailSent = sendActivationEmailResponse.data?.sendActivationEmail
   const isActivated = activateResponse.data?.activate
 
@@ -37,13 +36,13 @@ export default function ActivationTokenScreen({
 
   React.useEffect(() => {
     activate()
-  })
+  }, [])
 
   if (isActivated) {
     return (
       <div>
         <h1>Your account has been activated.</h1>
-        {user.isActive ? (
+        {user.isAuthenticated ? (
           <Link to="/home">Return Home</Link>
         ) : (
           <Link to="/login">Log In</Link>
@@ -64,7 +63,7 @@ export default function ActivationTokenScreen({
           Your account failed to activate. Please try activating your account
           again.
         </h1>
-        {user.isActive ? (
+        {user.isAuthenticated ? (
           <button onClick={handleClick}>Resend Activation Email</button>
         ) : (
           <Link to="/login">Log In</Link>
