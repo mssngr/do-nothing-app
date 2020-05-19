@@ -1,6 +1,6 @@
 # Do Nothing API
 
-The Do Nothing API provides all the database interactions necessary to manage users in an application. But, that's all it does. If you want to manage posts or products or add relationships between users, get to writing! The data model can be edited in the `/prisma/schema.prisma` file. The GraphQL API can be modified in the `/api/graphql.ts` file.
+The Do Nothing API provides all the database interactions necessary to securely manage users in an application. But, that's all it does. If you want to manage posts or products or add relationships between users, get to writing! The data model can be edited in the `/prisma/schema.prisma` file. The GraphQL API can be modified in the `/api/graphql` folder.
 
 ## Changing the Data Model
 
@@ -26,7 +26,11 @@ This API utilizes the following technologies:
 - Nexus JS
 - Prisma 2
 - Yarn
-- Forge (for SHA & AES)
+- CryptoJS
+- bcyrpt
 - JWT
 - Ramda
+- ESLint
 - Prettier
+- Husky
+- lint-staged
