@@ -2,7 +2,7 @@ import { use, server } from 'nexus'
 import { prisma } from 'nexus-plugin-prisma'
 import { auth } from 'nexus-plugin-jwt-auth'
 import cors from 'cors'
-import { appSecret } from './utils'
+import { ACCESS_SECRET } from './utils'
 
 // Enables the Prisma plugin
 use(prisma())
@@ -10,7 +10,7 @@ use(prisma())
 // Enables JWT Auth on protected paths
 use(
   auth({
-    appSecret,
+    appSecret: ACCESS_SECRET,
     protectedPaths: [
       'Query.user',
       'Query.users',

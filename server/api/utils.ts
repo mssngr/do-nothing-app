@@ -10,6 +10,8 @@ export const ACCESS_SECRET = process.env.ACCESS_SECRET || 'access-placeholder'
 export const ENCRYPTION_KEY =
   process.env.ENCRYPTION_KEY || 'encryption-placeholder'
 
+export const fieldsToEncrypt = ['firstName', 'lastName', 'email', 'phone']
+
 export function generateToken({
   id,
   secret,

@@ -35,8 +35,68 @@ schema.objectType({
 
 schema.queryType({
   definition(t) {
-    t.crud.user()
-    t.crud.users()
+    t.field('user', {
+      type: 'User',
+      nullable: true,
+      args: {
+        id: schema.idArg({ required: true }),
+      },
+      async resolve(parent, { id }, { db, log }) {
+        log.info(`Someone is trying to find User: ${id}`)
+        try {
+          const encryptedUser = await db.user.findOne({ where: { id } })
+          if (encryptedUser) {
+            log.info(`Someone successfully found User: ${id}`)
+            const decryptedUser: any = R.mapObjIndexed(
+              (text, key) =>
+                U.fieldsToEncrypt.includes(key)
+                  ? U.decrypt(text as string)
+                  : text,
+              encryptedUser
+            )
+            return decryptedUser
+          }
+          throw new Error(`User: ${id} could not be found`)
+        } catch (error) {
+          log.error(error)
+          log.info(`Someone failted to find User: ${id}`)
+          return null
+        }
+      },
+    })
+
+    t.field('users', {
+      type: 'User',
+      list: true,
+      args: {
+        ids: schema.arg({ type: 'ID', list: true, nullable: true }),
+      },
+      async resolve(parent, { ids }, { db, log }) {
+        log.info('Someone is trying to find users')
+        try {
+          const encryptedUsers = await db.user.findMany({
+            where: { id: { in: ids } },
+          })
+          if (R.isEmpty(encryptedUsers)) {
+            throw new Error('Users could not be found')
+          }
+          log.info('Someone successfully found users')
+          const decryptedUsers: any[] = encryptedUsers.map(encryptedUser =>
+            R.mapObjIndexed(
+              (text, key) =>
+                U.fieldsToEncrypt.includes(key)
+                  ? U.decrypt(text as string)
+                  : text,
+              encryptedUser
+            )
+          )
+          return decryptedUsers
+        } catch (error) {
+          log.error(error)
+          return []
+        }
+      },
+    })
 
     t.field('verify', {
       type: 'String',
@@ -44,7 +104,7 @@ schema.queryType({
       args: {
         accessToken: schema.stringArg({ required: true }),
       },
-      async resolve({}, { accessToken }, { db, log }) {
+      async resolve(parent, { accessToken }, { db, log }) {
         log.info('Someone is trying to verify their access token')
         try {
           const id = (jwt.verify(accessToken, U.ACCESS_SECRET) as any).id
@@ -75,7 +135,7 @@ schema.mutationType({
       args: {
         refreshToken: schema.stringArg({ required: true }),
       },
-      async resolve({}, { refreshToken }, { db, log }) {
+      async resolve(parent, { refreshToken }, { db, log }) {
         log.info('Someone is trying to get a new accessToken')
         try {
           const id = (jwt.verify(refreshToken, U.REFRESH_SECRET) as any).id
@@ -115,7 +175,7 @@ schema.mutationType({
         email: schema.stringArg({ required: true }),
         password: schema.stringArg({ required: true }),
       },
-      async resolve({}, { email, password }, { db, log }) {
+      async resolve(parent, { email, password }, { db, log }) {
         try {
           log.info(`${email} is trying to log in`)
           const foundUser = await db.user.findOne({
@@ -161,20 +221,14 @@ schema.mutationType({
         password: schema.stringArg({ required: true }),
         phone: schema.stringArg({ required: true }),
       },
-      async resolve(
-        {},
-        { firstName, lastName, email, password, phone },
-        { db, log }
-      ) {
+      async resolve(parent, newUser, { db, log }) {
         try {
-          log.info(`${email} is trying to sign up`)
-          const encryptedFields: any = R.map((val: string) => U.encrypt(val), {
-            firstName,
-            lastName,
-            email,
-            phone,
-          } as any)
-          const hash = await U.hash(password)
+          log.info(`${newUser.email} is trying to sign up`)
+          const encryptedFields: any = R.map(
+            (val: string) => U.encrypt(val),
+            R.pick(U.fieldsToEncrypt, newUser) as any
+          )
+          const hash = await U.hash(newUser.password)
           const createdUser = await db.user.create({
             data: { ...encryptedFields, hash },
           })
@@ -193,12 +247,12 @@ schema.mutationType({
             secret: U.ACTIVATION_SECRET,
             expiresIn: '1 day',
           })
-          log.info(`${email} successfully signed up`)
+          log.info(`${newUser.email} successfully signed up`)
           log.info(`Send activation email (${activationToken})`)
           return { id, accessToken, refreshToken }
         } catch (error) {
           log.error(error)
-          log.info(`${email} failed to log in`)
+          log.info(`${newUser.email} failed to log in`)
           throw new Error(error)
         }
       },
@@ -209,7 +263,7 @@ schema.mutationType({
       args: {
         activationToken: schema.stringArg({ required: true }),
       },
-      async resolve({}, { activationToken }, { db, log }) {
+      async resolve(parent, { activationToken }, { db, log }) {
         try {
           log.info('Someone is trying to activate their account')
           const verifiedToken = jwt.verify(activationToken, U.ACTIVATION_SECRET)
