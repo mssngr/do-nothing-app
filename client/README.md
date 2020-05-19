@@ -1,6 +1,6 @@
-# Do Nothing UI
+# Do Nothing Client
 
-The Do Nothing UI uses Create React App & Apollo Client to display a "no frills" interface for users to sign up, log in, activate their accounts, update their profiles, and delete their accounts. You can extend this UI to build out your awesome new app. Or, you can scrap it entirely and just use the Do Nothing API. It's entirely up to you. All relevant commands and information for the Create React App are below.
+The Do Nothing Client uses Create React App & Apollo Client to display a "no frills" interface for users to sign up, log in, activate their accounts, update their profiles, and delete their accounts. You can extend this UI to build out your awesome new app. Or, you can scrap it entirely and just use the Do Nothing API. It's entirely up to you. All relevant commands and information for the Create React App are below.
 
 ## Technologies
 
