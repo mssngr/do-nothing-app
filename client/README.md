@@ -11,10 +11,11 @@ The Do Nothing UI uses Create React App & Apollo Client to display a "no frills"
 - React Context
 - Reach Router
 - Apollo React Client
-- Formik
+- ~Formik~
 - Ramda
 - Prettier
 - Husky
+- lint-staged
 
 # CRA README
 
