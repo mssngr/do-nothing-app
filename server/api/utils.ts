@@ -9,6 +9,8 @@ export const ACTIVATION_SECRET =
 export const ACCESS_SECRET = process.env.ACCESS_SECRET || 'access-placeholder'
 export const ENCRYPTION_KEY =
   process.env.ENCRYPTION_KEY || 'encryption-placeholder'
+export const BLIND_INDEX_SECRET =
+  process.env.BLIND_INDEX_SECRET || 'blind-index-placeholder'
 
 export const fieldsToEncrypt = ['firstName', 'lastName', 'email', 'phone']
 
@@ -39,4 +41,8 @@ export function encrypt(text: string) {
 
 export function decrypt(text: string) {
   return CryptoJS.AES.decrypt(text, ENCRYPTION_KEY).toString(CryptoJS.enc.Utf8)
+}
+
+export function blindIndex(text: string) {
+  return CryptoJS.HmacSHA256(text, BLIND_INDEX_SECRET).toString()
 }

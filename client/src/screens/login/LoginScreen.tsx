@@ -1,6 +1,6 @@
 import React from 'react'
 import * as R from 'ramda'
-import { RouteComponentProps, navigate } from '@reach/router'
+import { RouteComponentProps, navigate, Link } from '@reach/router'
 import { useMutation, gql } from '@apollo/client'
 import { UserContext } from 'components/Providers/User'
 
@@ -62,6 +62,7 @@ export default function LoginScreen(props: RouteComponentProps) {
         <button type="submit">Log In</button>
         {isIncorrect && <p>Incorrect email or password</p>}
       </form>
+      <Link to="/signup">Sign Up</Link>
     </div>
   )
 }

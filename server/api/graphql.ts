@@ -8,6 +8,7 @@ schema.objectType({
   definition(t) {
     t.model.id()
     t.model.email()
+    t.model.emailIndex()
     t.model.phone()
     t.model.firstName()
     t.model.lastName()
@@ -178,8 +179,9 @@ schema.mutationType({
       async resolve(parent, { email, password }, { db, log }) {
         try {
           log.info(`${email} is trying to log in`)
+          const emailIndex = U.blindIndex(email)
           const foundUser = await db.user.findOne({
-            where: { email },
+            where: { emailIndex },
           })
           const isAuthenticated =
             foundUser && U.checkPass(password, foundUser.hash)
@@ -228,9 +230,10 @@ schema.mutationType({
             (val: string) => U.encrypt(val),
             R.pick(U.fieldsToEncrypt, newUser) as any
           )
+          const emailIndex = U.blindIndex(newUser.email)
           const hash = await U.hash(newUser.password)
           const createdUser = await db.user.create({
-            data: { ...encryptedFields, hash },
+            data: { ...encryptedFields, emailIndex, hash },
           })
           const id = createdUser.id
           const refreshToken = U.generateToken({
