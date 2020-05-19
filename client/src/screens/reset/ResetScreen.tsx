@@ -1,6 +1,7 @@
 import React from 'react'
 import { RouteComponentProps, Link } from '@reach/router'
 import { useMutation, gql } from '@apollo/client'
+import { useFormik } from 'formik'
 import LoadingOrError from 'components/LoadingOrError'
 
 const SEND_RESET_EMAIL = gql`
@@ -14,12 +15,14 @@ const ResetScreen: React.FC<RouteComponentProps> = () => {
     SEND_RESET_EMAIL
   )
   const isEmailSent = data?.sendResetEmail
-
-  async function handleSubmit(e: React.FormEvent): Promise<void> {
-    e.preventDefault()
-    const email = (e.currentTarget.children[0] as HTMLInputElement).value
-    sendResetEmail({ variables: { email } })
-  }
+  const { handleSubmit, handleChange, values } = useFormik({
+    initialValues: {
+      email: '',
+    },
+    onSubmit({ email }) {
+      sendResetEmail({ variables: { email } })
+    },
+  })
 
   return (
     <LoadingOrError {...loadingOrError}>
@@ -36,7 +39,13 @@ const ResetScreen: React.FC<RouteComponentProps> = () => {
       ) : (
         <div>
           <form onSubmit={handleSubmit}>
-            <input placeholder="email" type="email" />
+            <input
+              id="email"
+              placeholder="email"
+              type="email"
+              onChange={handleChange}
+              value={values.email}
+            />
             <button type="submit">Reset Password</button>
             {isEmailSent === false && <p>No record of that email exists</p>}
           </form>

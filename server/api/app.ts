@@ -27,6 +27,8 @@ use(
       'Query.users',
       'Mutation.updateOneUser',
       'Mutation.deleteOneUser',
+      'Mutation.updateEmail',
+      'Mutation.updatePassword',
       'Mutation.sendActivationEmail',
     ],
   })

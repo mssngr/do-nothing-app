@@ -2,6 +2,7 @@ import React from 'react'
 import * as R from 'ramda'
 import { RouteComponentProps, navigate, Link, Redirect } from '@reach/router'
 import { useMutation, gql } from '@apollo/client'
+import { useFormik } from 'formik'
 import { UserContext } from 'components/Providers/User'
 import LoadingOrError from 'components/LoadingOrError'
 
@@ -21,25 +22,27 @@ const LoginScreen: React.FC<RouteComponentProps> = () => {
   const [login, loadingOrError] = useMutation(LOGIN)
   const [isIncorrect, setIsIncorrect] = React.useState(false)
   const [isLocked, setIsLocked] = React.useState(false)
+  const { handleSubmit, handleChange, values } = useFormik({
+    initialValues: {
+      email: '',
+      password: '',
+    },
+    async onSubmit({ email, password }) {
+      const { data } = await login({ variables: { email, password } })
+      const loggedInUser = data?.login
 
-  async function handleSubmit(e: React.FormEvent): Promise<void> {
-    e.preventDefault()
-    const email = (e.currentTarget.children[0] as HTMLInputElement).value
-    const password = (e.currentTarget.children[1] as HTMLInputElement).value
-    const { data } = await login({ variables: { email, password } })
-    const loggedInUser = data?.login
-
-    if (loggedInUser?.id) {
-      updateUser({
-        ...R.pick(['id', 'accessToken', 'refreshToken'], loggedInUser),
-        isAuthenticated: true,
-      })
-      navigate('/home')
-    } else {
-      setIsIncorrect(true)
-      loggedInUser?.passwordAttempts > 4 && setIsLocked(true)
-    }
-  }
+      if (loggedInUser?.id) {
+        updateUser({
+          ...R.pick(['id', 'accessToken', 'refreshToken'], loggedInUser),
+          isAuthenticated: true,
+        })
+        navigate('/home')
+      } else {
+        setIsIncorrect(true)
+        loggedInUser?.passwordAttempts > 4 && setIsLocked(true)
+      }
+    },
+  })
 
   if (user.isAuthenticated) {
     return <Redirect to="/home" noThrow />
@@ -49,8 +52,20 @@ const LoginScreen: React.FC<RouteComponentProps> = () => {
     <LoadingOrError {...loadingOrError}>
       <div>
         <form onSubmit={handleSubmit}>
-          <input placeholder="email" type="email" />
-          <input placeholder="password" type="password" />
+          <input
+            id="email"
+            placeholder="email"
+            type="email"
+            onChange={handleChange}
+            value={values.email}
+          />
+          <input
+            id="password"
+            placeholder="password"
+            type="password"
+            onChange={handleChange}
+            value={values.password}
+          />
           <button type="submit">Log In</button>
           {isIncorrect && <p>Incorrect email or password</p>}
           {isLocked && (

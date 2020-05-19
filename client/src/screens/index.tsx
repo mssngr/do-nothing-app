@@ -10,6 +10,7 @@ import LoginScreen from 'screens/login'
 import LogoutScreen from 'screens/logout'
 import ResetScreen from 'screens/reset'
 import ResetTokenScreen from 'screens/reset/token'
+import AccountScreen from 'screens/account'
 import NotFoundScreen from 'screens/404'
 
 const Screens: React.FC = () => (
@@ -24,6 +25,7 @@ const Screens: React.FC = () => (
       <LogoutScreen path="/logout" />
       <ResetScreen path="/reset" />
       <ResetTokenScreen path="/reset/:resetToken" />
+      <AccountScreen path="/account" />
       <NotFoundScreen default />
     </Auth>
   </Router>

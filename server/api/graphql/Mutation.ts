@@ -15,6 +15,58 @@ export const Mutation = schema.mutationType({
     t.crud.updateOneUser()
     t.crud.deleteOneUser()
 
+    t.field('updateEmail', {
+      type: 'String',
+      nullable: true,
+      args: {
+        id: schema.idArg({ required: true }),
+        email: schema.stringArg({ required: true }),
+      },
+      async resolve(parent, { id, email }, { db, log }) {
+        log.info(`${id} is trying to update their email`)
+        try {
+          await db.user.update({
+            where: { id },
+            data: {
+              email: U.encrypt(email),
+              emailIndex: U.blindIndex(email),
+            },
+          })
+          log.info(`${id} successfully updated their email`)
+          return email
+        } catch (error) {
+          console.error(error)
+          log.info(`${id} failed to update their email`)
+          return null
+        }
+      },
+    })
+
+    t.field('updatePassword', {
+      type: 'Boolean',
+      args: {
+        id: schema.idArg({ required: true }),
+        password: schema.stringArg({ required: true }),
+      },
+      async resolve(parent, { id, password }, { db, log }) {
+        log.info(`${id} is trying to update their password`)
+        try {
+          await db.user.update({
+            where: { id },
+            data: {
+              hash: await U.hash(password),
+            },
+          })
+          log.info(`${id} successfully updated their password`)
+          return true
+        } catch (error) {
+          console.error(error)
+          log.info(`${id} failed to update their password`)
+          return false
+        }
+      },
+    })
+
     t.field('refresh', {
       type: 'String',
       nullable: true,
@@ -27,13 +79,13 @@ export const Mutation = schema.mutationType({
           const id = (jwt.verify(refreshToken, REFRESH_SECRET) as {
             id: string
           }).id
-          const foundUser = await db.user.findOne({
+          const user = await db.user.findOne({
             where: { id },
           })
           const isRefreshTokenStillValid =
-            !!foundUser?.refreshedAt &&
-            new Date().getTime() - foundUser?.refreshedAt.getTime() < 8.64e7 // 1 day
-          if (foundUser && isRefreshTokenStillValid) {
+            !!user?.refreshedAt &&
+            new Date().getTime() - user?.refreshedAt.getTime() < 8.64e7 // 1 day
+          if (user && isRefreshTokenStillValid) {
             const accessToken = U.generateToken({
               id,
               secret: ACCESS_SECRET,
@@ -68,16 +120,16 @@ export const Mutation = schema.mutationType({
         try {
           log.info('Someone is trying to log in')
           const emailIndex = U.blindIndex(email)
-          const foundUser = await db.user.findOne({
+          const user = await db.user.findOne({
             where: { emailIndex },
           })
-          if (foundUser) {
-            const isLocked = foundUser.passwordAttempts > 4
+          if (user) {
+            const isLocked = user.passwordAttempts > 4
             if (isLocked) {
               log.info(
-                `Account is locked. User ${foundUser?.id} must reset their password`
+                `Account is locked. User ${user?.id} must reset their password`
               )
-              const passwordAttempts = foundUser.passwordAttempts + 1
+              const passwordAttempts = user.passwordAttempts + 1
               await db.user.update({
                 where: { emailIndex },
                 data: {
@@ -86,9 +138,9 @@ export const Mutation = schema.mutationType({
               })
               return { passwordAttempts }
             }
-            const isAuthenticated = await U.checkPass(password, foundUser.hash)
+            const isAuthenticated = await U.checkPass(password, user.hash)
             if (isAuthenticated) {
-              const id = foundUser?.id as string
+              const id = user?.id as string
               const refreshToken = U.generateToken({
                 id,
                 secret: REFRESH_SECRET,
@@ -109,7 +161,7 @@ export const Mutation = schema.mutationType({
               return { id, accessToken, refreshToken }
             }
             log.info('Passwords do not match')
-            const passwordAttempts = foundUser.passwordAttempts + 1
+            const passwordAttempts = user.passwordAttempts + 1
             await db.user.update({
               where: { emailIndex },
               data: {
@@ -265,17 +317,17 @@ export const Mutation = schema.mutationType({
       type: 'Boolean',
       args: {
         resetToken: schema.stringArg({ required: true }),
-        newPassword: schema.stringArg({ required: true }),
+        password: schema.stringArg({ required: true }),
       },
-      async resolve(parent, { resetToken, newPassword }, { db, log }) {
+      async resolve(parent, { resetToken, password }, { db, log }) {
         log.info('Someone is trying to reset their password')
         try {
-          if (newPassword.length < 8) {
+          if (password.length < 8) {
             throw new Error('Password is not long enough (8 chars minimum)')
           }
           const verifiedToken = jwt.verify(resetToken, ACTIVATION_SECRET)
           const id = (verifiedToken as { id: string }).id
-          const hash = await U.hash(newPassword)
+          const hash = await U.hash(password)
           await db.user.update({
             where: { id },
             data: { hash, passwordAttempts: 0 },

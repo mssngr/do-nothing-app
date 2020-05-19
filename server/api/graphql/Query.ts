@@ -83,8 +83,8 @@ export const Query = schema.queryType({
           const id = (jwt.verify(accessToken, ACCESS_SECRET) as {
             id: string
           }).id
-          const foundUser = await db.user.findOne({ where: { id } })
-          if (foundUser?.id === id) {
+          const user = await db.user.findOne({ where: { id } })
+          if (user?.id === id) {
             log.info(`${id} successfully verified their access token`)
             return id
           }
