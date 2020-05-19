@@ -15,7 +15,7 @@ const REFRESH = gql`
   }
 `
 
-const publicRoutes = ['/', '/signup', '/login', '/logout']
+const publicRoutes = ['/', '/signup', '/login', '/logout', '/reset']
 
 export default function useAuth(location?: WindowLocation) {
   const client = useApolloClient()

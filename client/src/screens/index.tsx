@@ -6,6 +6,8 @@ import HomeScreen from 'screens/home'
 import LoginScreen from 'screens/login'
 import LogoutScreen from 'screens/logout'
 import SignupScreen from 'screens/signup'
+import ResetScreen from 'screens/reset'
+import ResetTokenScreen from 'screens/reset/token'
 import NotFoundScreen from 'screens/404'
 
 export default function Screens() {
@@ -17,6 +19,8 @@ export default function Screens() {
         <LoginScreen path="/login" />
         <LogoutScreen path="/logout" />
         <SignupScreen path="/signup" />
+        <ResetScreen path="/reset" />
+        <ResetTokenScreen path="/reset/:activationToken" />
       </Auth>
       <NotFoundScreen default />
     </Router>

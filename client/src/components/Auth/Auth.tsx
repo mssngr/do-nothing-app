@@ -1,5 +1,6 @@
 import React from 'react'
 import { Redirect, RouteComponentProps } from '@reach/router'
+import LoadingOrError from 'components/LoadingOrError'
 import useAuth from './useAuth'
 
 export default function Auth({
@@ -13,16 +14,8 @@ export default function Auth({
   }
 
   if (isAuthenticating) {
-    return <Loading />
+    return <LoadingOrError loading={isAuthenticated} />
   }
 
   return <Redirect to="/" noThrow />
-}
-
-function Loading() {
-  return (
-    <div>
-      <p>Loading...</p>
-    </div>
-  )
 }

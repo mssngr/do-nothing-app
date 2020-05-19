@@ -267,11 +267,61 @@ schema.mutationType({
         activationToken: schema.stringArg({ required: true }),
       },
       async resolve(parent, { activationToken }, { db, log }) {
+        log.info('Someone is trying to activate their account')
         try {
-          log.info('Someone is trying to activate their account')
           const verifiedToken = jwt.verify(activationToken, U.ACTIVATION_SECRET)
           const id = (verifiedToken as any).id
           await db.user.update({ where: { id }, data: { isActivated: true } })
+          return true
+        } catch (error) {
+          console.error(error)
+          return false
+        }
+      },
+    })
+
+    t.field('sendResetLink', {
+      type: 'Boolean',
+      args: {
+        email: schema.stringArg({ required: true }),
+      },
+      async resolve(parent, { email }, { db, log }) {
+        log.info(`${email} is trying to activate their account`)
+        try {
+          const emailIndex = U.blindIndex(email)
+          const user = await db.user.findOne({ where: { emailIndex } })
+          if (user) {
+            const activationToken = U.generateToken({
+              id: user.id,
+              secret: U.ACTIVATION_SECRET,
+              expiresIn: '1 hour',
+            })
+            log.info(
+              `Send reset password email (https://<insert-domain>/reset/${activationToken})`
+            )
+            return true
+          }
+          throw new Error('Email not found')
+        } catch (error) {
+          console.error(error)
+          return false
+        }
+      },
+    })
+
+    t.field('resetPassword', {
+      type: 'Boolean',
+      args: {
+        activationToken: schema.stringArg({ required: true }),
+        newPassword: schema.stringArg({ required: true }),
+      },
+      async resolve(parent, { activationToken, newPassword }, { db, log }) {
+        log.info('Someone is trying to activate their account')
+        try {
+          const verifiedToken = jwt.verify(activationToken, U.ACTIVATION_SECRET)
+          const id = (verifiedToken as any).id
+          const hash = await U.hash(newPassword)
+          await db.user.update({ where: { id }, data: { hash } })
           return true
         } catch (error) {
           console.error(error)

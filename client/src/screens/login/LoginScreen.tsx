@@ -3,6 +3,7 @@ import * as R from 'ramda'
 import { RouteComponentProps, navigate, Link } from '@reach/router'
 import { useMutation, gql } from '@apollo/client'
 import { UserContext } from 'components/Providers/User'
+import LoadingOrError from 'components/LoadingOrError'
 
 const LOGIN = gql`
   mutation Login($email: String!, $password: String!) {
@@ -37,32 +38,19 @@ export default function LoginScreen(props: RouteComponentProps) {
     }
   }
 
-  if (loading) {
-    return (
-      <div>
-        <p>Loading...</p>
-      </div>
-    )
-  }
-
-  if (error) {
-    console.error(error)
-    return (
-      <div>
-        <p>Error...</p>
-      </div>
-    )
-  }
-
   return (
-    <div>
-      <form onSubmit={handleSubmit}>
-        <input placeholder="email" type="email" />
-        <input placeholder="password" type="password" />
-        <button type="submit">Log In</button>
-        {isIncorrect && <p>Incorrect email or password</p>}
-      </form>
-      <Link to="/signup">Sign Up</Link>
-    </div>
+    <LoadingOrError loading={loading} error={error}>
+      <div>
+        <form onSubmit={handleSubmit}>
+          <input placeholder="email" type="email" />
+          <input placeholder="password" type="password" />
+          <button type="submit">Log In</button>
+          {isIncorrect && <p>Incorrect email or password</p>}
+        </form>
+        <Link to="/signup">Sign Up</Link>
+        <br />
+        <Link to="/reset">Reset Password</Link>
+      </div>
+    </LoadingOrError>
   )
 }
