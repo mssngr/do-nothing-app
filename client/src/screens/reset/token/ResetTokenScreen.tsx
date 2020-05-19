@@ -3,17 +3,17 @@ import { RouteComponentProps, Link } from '@reach/router'
 import { useMutation, gql } from '@apollo/client'
 import LoadingOrError from 'components/LoadingOrError'
 
-const RESET = gql`
-  mutation ResetPassword($activationToken: String!) {
-    resetPassword(activationToken: $activationToken)
+const RESET_PASSWORD = gql`
+  mutation ResetPassword($resetToken: String!) {
+    resetPassword(resetToken: $resetToken)
   }
 `
 
-export default function ReactivateScreen({
-  activationToken,
-}: { activationToken?: string } & RouteComponentProps) {
-  const [reset, { loading, error, data }] = useMutation(RESET, {
-    variables: { activationToken },
+export default function ResetTokenScreen({
+  resetToken,
+}: { resetToken?: string } & RouteComponentProps) {
+  const [reset, { loading, error, data }] = useMutation(RESET_PASSWORD, {
+    variables: { resetToken },
   })
   const isReset = data?.resetPassword
 

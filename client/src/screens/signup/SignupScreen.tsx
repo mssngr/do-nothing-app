@@ -51,6 +51,9 @@ export default function SignupScreen(props: RouteComponentProps) {
         ...R.pick(['id', 'accessToken', 'refreshToken'], newUser),
         isActive: true,
       })
+      window.alert(
+        'An activation link was sent to your email. Please follow the link to activate your account. You have 24 hours before it expires.'
+      )
       navigate('/home')
     }
   }

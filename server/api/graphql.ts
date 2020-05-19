@@ -164,7 +164,7 @@ schema.mutationType({
           throw new Error(`User ${id} not found`)
         } catch (error) {
           log.error(error)
-          log.info(`Someone failed to get a new accessToken`)
+          log.info('Someone failed to get a new accessToken')
           return null
         }
       },
@@ -178,7 +178,7 @@ schema.mutationType({
       },
       async resolve(parent, { email, password }, { db, log }) {
         try {
-          log.info(`${email} is trying to log in`)
+          log.info('Someone is trying to log in')
           const emailIndex = U.blindIndex(email)
           const foundUser = await db.user.findOne({
             where: { emailIndex },
@@ -202,13 +202,13 @@ schema.mutationType({
                 refreshedAt: new Date(),
               },
             })
-            log.info(`${email} successfully logged in`)
+            log.info(`${id} successfully logged in`)
             return { id, accessToken, refreshToken }
           }
-          throw new Error(`User ${email} not found or passwords do not match`)
+          throw new Error('Email not found or passwords do not match')
         } catch (error) {
           log.error(error)
-          log.info(`${email} failed to log in`)
+          log.info('Someone failed to log in')
           return null
         }
       },
@@ -225,7 +225,7 @@ schema.mutationType({
       },
       async resolve(parent, newUser, { db, log }) {
         try {
-          log.info(`${newUser.email} is trying to sign up`)
+          log.info('Someone is trying to sign up')
           const encryptedFields: any = R.map(
             (val: string) => U.encrypt(val),
             R.pick(U.fieldsToEncrypt, newUser) as any
@@ -250,13 +250,46 @@ schema.mutationType({
             secret: U.ACTIVATION_SECRET,
             expiresIn: '1 day',
           })
-          log.info(`${newUser.email} successfully signed up`)
-          log.info(`Send activation email (${activationToken})`)
+          log.info(`${createdUser.id} successfully signed up`)
+          log.info(
+            `Send activation email (https://<insert-domain>/activation/${activationToken})`
+          )
           return { id, accessToken, refreshToken }
         } catch (error) {
           log.error(error)
-          log.info(`${newUser.email} failed to log in`)
+          log.info('Someone failed to sign up')
           throw new Error(error)
+        }
+      },
+    })
+
+    t.field('sendActivationEmail', {
+      type: 'Boolean',
+      args: {
+        email: schema.stringArg({ required: true }),
+      },
+      async resolve(parent, { email }, { db, log }) {
+        log.info('Someone is trying to get an activation email')
+        try {
+          const emailIndex = U.blindIndex(email)
+          const user = await db.user.findOne({ where: { emailIndex } })
+          if (user) {
+            const activationToken = U.generateToken({
+              id: user.id,
+              secret: U.ACTIVATION_SECRET,
+              expiresIn: '1 hour',
+            })
+            log.info(
+              `Send activation email (https://<insert-domain>/activation/${activationToken})`
+            )
+            log.info(`${user.id} successfully got a reset password email`)
+            return true
+          }
+          throw new Error('Email not found')
+        } catch (error) {
+          console.error(error)
+          log.info('Someone failed to get an activation email')
+          return false
         }
       },
     })
@@ -272,21 +305,23 @@ schema.mutationType({
           const verifiedToken = jwt.verify(activationToken, U.ACTIVATION_SECRET)
           const id = (verifiedToken as any).id
           await db.user.update({ where: { id }, data: { isActivated: true } })
+          log.info(`${id} successfully activated their account`)
           return true
         } catch (error) {
           console.error(error)
+          log.info('Someone failed to activate their account')
           return false
         }
       },
     })
 
-    t.field('sendResetLink', {
+    t.field('sendResetEmail', {
       type: 'Boolean',
       args: {
         email: schema.stringArg({ required: true }),
       },
       async resolve(parent, { email }, { db, log }) {
-        log.info(`${email} is trying to activate their account`)
+        log.info('Someone is trying to get a reset password email')
         try {
           const emailIndex = U.blindIndex(email)
           const user = await db.user.findOne({ where: { emailIndex } })
@@ -299,11 +334,13 @@ schema.mutationType({
             log.info(
               `Send reset password email (https://<insert-domain>/reset/${activationToken})`
             )
+            log.info(`${user.id} successfully got a reset password email`)
             return true
           }
           throw new Error('Email not found')
         } catch (error) {
           console.error(error)
+          log.info('Someone failed to get a reset password email')
           return false
         }
       },
@@ -312,19 +349,21 @@ schema.mutationType({
     t.field('resetPassword', {
       type: 'Boolean',
       args: {
-        activationToken: schema.stringArg({ required: true }),
+        resetToken: schema.stringArg({ required: true }),
         newPassword: schema.stringArg({ required: true }),
       },
-      async resolve(parent, { activationToken, newPassword }, { db, log }) {
-        log.info('Someone is trying to activate their account')
+      async resolve(parent, { resetToken, newPassword }, { db, log }) {
+        log.info('Someone is trying to reset their password')
         try {
-          const verifiedToken = jwt.verify(activationToken, U.ACTIVATION_SECRET)
+          const verifiedToken = jwt.verify(resetToken, U.ACTIVATION_SECRET)
           const id = (verifiedToken as any).id
           const hash = await U.hash(newPassword)
           await db.user.update({ where: { id }, data: { hash } })
+          log.info(`${id} successfully reset their password`)
           return true
         } catch (error) {
           console.error(error)
+          log.info('Someone failed to reset their password')
           return false
         }
       },

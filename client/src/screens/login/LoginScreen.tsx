@@ -1,6 +1,6 @@
 import React from 'react'
 import * as R from 'ramda'
-import { RouteComponentProps, navigate, Link } from '@reach/router'
+import { RouteComponentProps, navigate, Link, Redirect } from '@reach/router'
 import { useMutation, gql } from '@apollo/client'
 import { UserContext } from 'components/Providers/User'
 import LoadingOrError from 'components/LoadingOrError'
@@ -16,7 +16,7 @@ const LOGIN = gql`
 `
 
 export default function LoginScreen(props: RouteComponentProps) {
-  const updateUser = React.useContext(UserContext)[1]
+  const [user, updateUser] = React.useContext(UserContext)
   const [login, { loading, error }] = useMutation(LOGIN)
   const [isIncorrect, setIsIncorrect] = React.useState(false)
 
@@ -36,6 +36,10 @@ export default function LoginScreen(props: RouteComponentProps) {
     } else {
       setIsIncorrect(true)
     }
+  }
+
+  if (user.isActive) {
+    return <Redirect to="/home" noThrow />
   }
 
   return (

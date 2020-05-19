@@ -15,7 +15,7 @@ const REFRESH = gql`
   }
 `
 
-const publicRoutes = ['/', '/signup', '/login', '/logout', '/reset']
+const publicRoutes = ['^/', '^/signup', '^/login', '^/logout', '^/reset.*']
 
 export default function useAuth(location?: WindowLocation) {
   const client = useApolloClient()
@@ -27,7 +27,10 @@ export default function useAuth(location?: WindowLocation) {
   const hasYetToVerifyOrRefresh =
     state.isVerified === undefined ||
     (state.isRefreshed === undefined && !!user.refreshToken)
-  const isPublicPath = publicRoutes.some(route => route === location?.pathname)
+  const isPublicPath = publicRoutes.some(route => {
+    const publicRouteRegex = new RegExp(route)
+    return !location?.pathname?.match(publicRouteRegex)
+  })
 
   const isAuthenticated = user.isActive || isPublicPath
   const isAuthenticating = !isAuthenticated && hasYetToVerifyOrRefresh

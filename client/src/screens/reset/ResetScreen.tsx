@@ -3,20 +3,22 @@ import { RouteComponentProps, Link } from '@reach/router'
 import { useMutation, gql } from '@apollo/client'
 import LoadingOrError from 'components/LoadingOrError'
 
-const RESET = gql`
-  mutation SendResetLink($email: String!) {
-    sendRestLink(email: $email)
+const SEND_RESET_EMAIL = gql`
+  mutation SendResetEmail($email: String!) {
+    sendResetEmail(email: $email)
   }
 `
 
 export default function ResetScreen(props: RouteComponentProps) {
-  const [sendResetLink, { loading, error, data }] = useMutation(RESET)
-  const isEmailSent = data?.sendResetLink
+  const [sendResetEmail, { loading, error, data }] = useMutation(
+    SEND_RESET_EMAIL
+  )
+  const isEmailSent = data?.sendResetEmail
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     const email = (e.target as any).children[0].value
-    sendResetLink({ variables: { email } })
+    sendResetEmail({ variables: { email } })
   }
 
   return (
