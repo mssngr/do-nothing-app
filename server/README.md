@@ -1,6 +1,6 @@
-# Do Nothing API
+# Do Nothing Server
 
-The Do Nothing API provides all the database interactions necessary to securely manage users in an application. But, that's all it does. If you want to manage posts or products or add relationships between users, get to writing! The data model can be edited in the `/prisma/schema.prisma` file. The GraphQL API can be modified in the `/api/graphql` folder.
+The Do Nothing Server provides all the database interactions necessary to securely manage users in an application. But, that's all it does. If you want to manage posts or products or add relationships between users, get to writing! The data model can be edited in the `/prisma/schema.prisma` file. The GraphQL API can be modified in the `/api/graphql` folder.
 
 ## Changing the Data Model
 
