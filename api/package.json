@@ -8,6 +8,7 @@
 	"dependencies": {
 		"@elysiajs/jwt": "^1.2.0",
 		"@elysiajs/swagger": "^1.2.0",
+		"@somnolence/bun": "^0.1.4",
 		"argon2": "^0.41.1",
 		"elysia": "latest",
 		"elysia-rate-limit": "^4.1.0",
